@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Game — Liar's Cards</title>
   <meta name="description" content="Play Liar's Cards in real-time. Bluff, dare, and outlast your opponents." />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🃏</text></svg>" />
@@ -35,6 +35,10 @@
       </div>
 
       <div class="nav-right">
+        <button class="nav-icon-btn mobile-fullscreen-btn" id="mobile-fullscreen-btn" title="Enter fullscreen landscape">
+          <span>⛶</span>
+          <span class="nav-btn-text">Fullscreen</span>
+        </button>
         <button class="nav-icon-btn nav-exit-btn" id="nav-exit-btn" title="Exit game">
           <span>🚪</span>
           <span class="nav-btn-text">Exit</span>
@@ -210,8 +214,18 @@
 
   </div><!-- .game-page -->
 
+  <div class="mobile-landscape-prompt" id="mobile-landscape-prompt">
+    <div class="mobile-landscape-card">
+      <div class="mobile-landscape-icon" aria-hidden="true">📱↻</div>
+      <h1>Play in landscape</h1>
+      <p>Turn your phone sideways for the full table and your entire hand.</p>
+      <button class="btn btn-primary" id="mobile-landscape-btn">⛶ Enter fullscreen &amp; rotate</button>
+      <p class="mobile-landscape-hint">If your phone does not rotate automatically, turn it sideways.</p>
+    </div>
+  </div>
+
   <!-- Dare Standoff Modal -->
-  <div class="modal-overlay" id="dare-modal">
+  <div class="modal-overlay dare-modal-overlay" id="dare-modal">
     <div class="modal-box dare-modal-box">
       <div class="dare-modal-glow"></div>
       <div class="dare-modal-title">🔍 DARE CHALLENGE!</div>

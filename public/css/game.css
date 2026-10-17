@@ -22,7 +22,9 @@ html, body {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh;
   max-height: 100vh;
+  max-height: 100dvh;
   overflow: hidden;
   position: relative;
   z-index: 1;
@@ -1347,6 +1349,8 @@ html, body {
   margin-bottom: 20px;
 }
 
+.mobile-landscape-prompt { display: none; }
+
 .dare-card {
   width: 82px;
   height: 118px;
@@ -1572,6 +1576,217 @@ html, body {
   }
   .card-rank { font-size: 0.78rem; }
   .card-suit-center { font-size: 1.5rem; }
+}
+
+@media (max-width: 768px) and (orientation: portrait) {
+  .mobile-landscape-prompt {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right))
+      max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+    background: radial-gradient(circle at 50% 15%, #0e1533 0%, #06081a 100%);
+    text-align: center;
+  }
+
+  .mobile-landscape-card {
+    width: min(100%, 360px);
+  }
+
+  .mobile-landscape-icon {
+    margin-bottom: 12px;
+    font-size: 3rem;
+  }
+
+  .mobile-landscape-card h1 {
+    margin-bottom: 8px;
+    color: var(--gold, #f59e0b);
+    font-size: 1.5rem;
+  }
+
+  .mobile-landscape-card p {
+    margin-bottom: 18px;
+    color: var(--text-dim, #94a3b8);
+    font-size: 0.95rem;
+  }
+
+  .mobile-landscape-card .btn {
+    width: 100%;
+    min-height: 46px;
+  }
+
+  .mobile-landscape-card .mobile-landscape-hint {
+    margin: 14px 0 0;
+    font-size: 0.78rem;
+  }
+}
+
+@media (max-width: 900px) and (orientation: landscape), (max-height: 500px) and (orientation: landscape) {
+  .game-nav {
+    height: 40px;
+    min-height: 40px;
+    padding: 0 max(8px, env(safe-area-inset-right)) 0 max(8px, env(safe-area-inset-left));
+  }
+
+  .game-nav-logo { font-size: 0.86rem; }
+  .nav-left, .nav-right { gap: 5px; }
+  .nav-icon-btn { padding: 3px 7px; }
+  .nav-btn-text { display: none; }
+  .nav-room-code { padding: 3px 8px; }
+  .nav-room-code .nav-label, .nav-pile-info .vault-label { display: none; }
+  .mobile-fullscreen-btn { display: inline-flex; }
+
+  .table-area {
+    padding: 3px max(8px, env(safe-area-inset-right)) 3px max(8px, env(safe-area-inset-left));
+    gap: 3px;
+  }
+
+  .opponents-row {
+    min-height: 36px;
+    max-height: 40px;
+    gap: 5px;
+    padding: 1px 2px;
+  }
+
+  .opponent-panel {
+    min-width: 86px;
+    padding: 3px 6px;
+    gap: 5px;
+  }
+
+  .opp-avatar { width: 24px; height: 24px; font-size: 0.72rem; }
+  .opp-name { font-size: 0.64rem; }
+  .opp-status-badge, .opp-card-chip { font-size: 0.58rem; }
+
+  .game-table-center {
+    padding: 4px 8px;
+    border-radius: 14px;
+    border-width: 2px;
+  }
+
+  .table-top-bar { gap: 5px; }
+  .turn-banner { padding: 3px 8px; font-size: 0.66rem; }
+  .turn-banner-dot { width: 6px; height: 6px; }
+  .declared-rank-display { padding: 2px 7px; gap: 4px; }
+  .declared-label { font-size: 0.5rem; }
+  .declared-rank-val { font-size: 0.88rem; }
+  .declared-crown { font-size: 0.82rem; }
+  .discard-pile-area { gap: 2px; }
+  .discard-header { gap: 5px; }
+  .discard-pile-label, .discard-total-badge { font-size: 0.58rem; }
+  .discard-stack { max-height: 48px; gap: 4px; padding: 2px 4px; }
+  .discard-entry { padding: 2px 5px; gap: 1px; }
+  .discard-entry-name, .discard-entry-meta { font-size: 0.52rem; }
+  .discard-mini-card { width: 16px; height: 22px; }
+
+  .table-bottom-bar {
+    flex-direction: row;
+    gap: 5px;
+  }
+
+  .table-emotes-bar { gap: 1px; padding: 2px 4px; }
+  .emote-btn { padding: 1px 2px; font-size: 0.8rem; }
+  .action-buttons { gap: 4px; }
+  .action-btn { padding: 4px 5px; border-radius: 8px; gap: 0; }
+  .action-btn-icon { font-size: 0.82rem; }
+  .action-btn-main { font-size: 0.7rem; }
+  .action-btn-label { font-size: 0.5rem; }
+
+  .my-hand-area {
+    gap: 2px;
+    padding: 3px max(8px, env(safe-area-inset-right)) max(3px, env(safe-area-inset-bottom))
+      max(8px, env(safe-area-inset-left));
+  }
+
+  .rank-selector {
+    gap: 5px;
+    padding: 2px 6px;
+  }
+
+  .rank-selector-title { font-size: 0.58rem; }
+  .rank-selector-sub { display: none; }
+  .rank-btn { padding: 2px 5px; font-size: 0.62rem; }
+  .staging-tray { gap: 2px; padding: 3px 6px; }
+  .staging-title { font-size: 0.58rem; }
+  .staging-help-hint { display: none; }
+  .staging-btn { padding: 1px 5px; font-size: 0.58rem; }
+  .staged-slot { min-width: 54px; padding: 2px 4px; }
+  .staged-slot-card { width: 32px; height: 42px; }
+  .staged-truth-tag { display: none; }
+  .hand-info-row { min-height: 18px; }
+  .hand-info-left { gap: 5px; }
+  .hand-label, .hand-counter-badge, .hand-selected-info,
+  .sort-label, .sort-btn { font-size: 0.58rem; }
+  .my-hand-cards {
+    height: clamp(62px, 19dvh, 78px);
+    min-height: clamp(62px, 19dvh, 78px);
+    max-height: clamp(62px, 19dvh, 78px);
+    padding: 4px 6px 2px;
+  }
+
+  .play-card {
+    width: 48px;
+    height: clamp(54px, 16dvh, 66px);
+    margin-right: -17px;
+    border-radius: 6px;
+    padding: 3px;
+  }
+
+  .card-rank { font-size: 0.66rem; }
+  .card-suit-sm { font-size: 0.56rem; }
+  .card-suit-center { font-size: 1.2rem; }
+}
+
+@media (max-width: 768px), (max-height: 500px) and (orientation: landscape) {
+  .dare-modal-overlay {
+    overflow-y: auto;
+    align-items: center;
+    padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right))
+      max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+  }
+
+  .dare-modal-box {
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100dvh - 16px);
+    min-height: 0;
+    overflow: hidden;
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .dare-modal-title { font-size: 1.1rem; }
+  .dare-modal-sub { font-size: 0.78rem; }
+  .dare-hint { margin-bottom: 8px; font-size: 0.68rem; }
+
+  .dare-cards-row {
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    max-width: 100%;
+    max-height: 42dvh;
+    overflow-x: auto;
+    overflow-y: hidden;
+    margin: 4px 0 12px;
+    padding: 10px 4px;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    scroll-snap-type: x proximity;
+  }
+
+  .dare-card {
+    width: 68px;
+    height: clamp(86px, 28dvh, 110px);
+    scroll-snap-align: start;
+  }
+
+  .dare-card-slot-label { font-size: 0.58rem; }
+  .dare-card-symbol { font-size: 1.8rem; }
+  .dare-modal-actions { flex-shrink: 0; }
+  .dare-result-banner { padding: 8px 10px; margin-bottom: 10px; font-size: 0.84rem; }
 }
 
 @media (max-width: 480px) {

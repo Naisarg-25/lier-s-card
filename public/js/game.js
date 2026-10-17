@@ -306,6 +306,31 @@ document.getElementById('nav-exit-btn')?.addEventListener('click', exitGame);
 document.getElementById('end-home-btn')?.addEventListener('click', exitGame);
 document.getElementById('end-replay-btn')?.addEventListener('click', exitGame);
 
+function enterFullscreenLandscape() {
+  const fullscreen = document.documentElement.requestFullscreen;
+  if (!fullscreen) {
+    showToast('Fullscreen is not supported here. Turn your phone sideways to continue.', 'info');
+    return;
+  }
+
+  document.documentElement.requestFullscreen().then(() => {
+    const orientation = screen.orientation;
+    if (!orientation?.lock) {
+      showToast('Turn your phone sideways to play in landscape.', 'info');
+      return;
+    }
+
+    orientation.lock('landscape').catch(() => {
+      showToast('Turn your phone sideways to play in landscape.', 'info');
+    });
+  }).catch(() => {
+    showToast('Allow fullscreen, then turn your phone sideways to play.', 'error');
+  });
+}
+
+document.getElementById('mobile-landscape-btn')?.addEventListener('click', enterFullscreenLandscape);
+document.getElementById('mobile-fullscreen-btn')?.addEventListener('click', enterFullscreenLandscape);
+
 /* ─── Card Utilities ────────────────────────────────────────────────────────── */
 function cardColor(suit) { return RED_SUITS.has(suit) ? 'red' : 'black'; }
 
