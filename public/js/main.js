@@ -41,7 +41,21 @@ function getPlayerId() {
 const myPlayerId = getPlayerId();
 
 /* ─── Init ─────────────────────────────────────────────────────────────────── */
-const socket = io();
+const socket = io({
+  reconnection: true,
+  reconnectionAttempts: Infinity,
+  reconnectionDelay: 1000,
+  reconnectionDelayMax: 4000,
+  timeout: 20000,
+  transports: ['websocket', 'polling']
+});
+
+// Periodic heartbeat to prevent disconnect
+setInterval(() => {
+  if (socket && socket.connected) {
+    socket.volatile.emit('clientHeartbeat');
+  }
+}, 8000);
 let myName = ls.get('playerName') || '';
 let cancellingMatchmaking = false;
 

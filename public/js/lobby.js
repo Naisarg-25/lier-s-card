@@ -40,7 +40,26 @@ let   currentRoom = null;
 
 if (!roomCode) { location.href = '/'; }
 
-const socket = io();
+const socket = io({
+  reconnection: true,
+  reconnectionAttempts: Infinity,
+  reconnectionDelay: 1000,
+  reconnectionDelayMax: 4000,
+  timeout: 20000,
+  transports: ['websocket', 'polling']
+});
+
+// Periodic heartbeat to prevent disconnect
+setInterval(() => {
+  if (socket && socket.connected) {
+    socket.volatile.emit('clientHeartbeat');
+  }
+}, 8000);
+
+socket.on('disconnect', (reason) => {
+  console.warn('[Lobby] Disconnected:', reason);
+  showToast('Connection lost. Reconnecting to lobby...', 'info');
+});
 
 /* ─── Socket events ─────────────────────────────────────────────────────────── */
 socket.on('connect', () => {
@@ -144,6 +163,7 @@ function renderRoom(room) {
         isRoomHost ? '<span class="player-badge badge-host">HOST</span>' : '',
         isMe       ? '<span class="player-badge badge-you">YOU</span>'   : '',
         p.isAI     ? '<span class="player-badge badge-bot">BOT</span>'   : '',
+        (p.connected === false && !p.isAI) ? '<span class="player-badge" style="background:#ea580c;color:#fff;">OFFLINE</span>' : '',
       ].join('');
 
       // Host can remove AI bots OR other humans

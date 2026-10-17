@@ -5,7 +5,12 @@ const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: '*' } });
+const io = new Server(server, {
+  cors: { origin: '*' },
+  pingInterval: 10000,
+  pingTimeout: 20000,
+  connectTimeout: 20000
+});
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('/', (_, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
@@ -52,6 +57,7 @@ class LiarsGame {
     this.players = playerDefs.map((p, i) => ({
       id: p.id, name: normalizePlayerName(p.name), isAI: p.isAI || false,
       connected: p.connected !== false,
+      disconnectDeadline: p.disconnectDeadline || null,
       hand: [], finished: false, pendingFinish: false, isLoser: false, order: i
     }));
     this.discardPile   = []; // [{cards, declaredRank, playerId, playerName}]
@@ -64,6 +70,7 @@ class LiarsGame {
     this.loser         = null;
     this.log           = [];
     this.aiTimerActive = false;
+    this.turnDeadline  = null;
   }
 
   get activePlayers() { return this.players.filter(p => !p.finished); }
@@ -150,8 +157,12 @@ class LiarsGame {
       player.pendingFinish = false;
       player.connected = false;
       player.isLoser = true;
+      player.removed = true;
       this.loser = player;
-      player.hand = [];
+      if (player.hand.length > 0) {
+        this.tempPile.push(...player.hand);
+        player.hand = [];
+      }
       this.addLog(`${player.name} ${reason}`);
       return true;
     }
@@ -160,18 +171,29 @@ class LiarsGame {
     player.pendingFinish = false;
     player.connected = false;
     player.isLoser = true;
-    player.hand = [];
+    player.removed = true;
+    if (player.hand.length > 0) {
+      this.tempPile.push(...player.hand);
+      player.hand = [];
+    }
     this.passedThisRound.delete(playerId);
     this.addLog(`${player.name} ${reason}`);
 
-    if (this.currentPlayer?.id === playerId) this.advancePlayer();
+    if (this.currentPlayer?.id === playerId) {
+      this.advancePlayer();
+      this.roundStarterIndex = this.currentPlayerIndex;
+    }
 
     const remainingPlayers = this.activePlayers;
-    if (remainingPlayers.length === 1) {
-      this.winner = remainingPlayers[0];
-      this.loser = player;
-      this.phase = 'ended';
-      this.addLog(`🏆 ${this.winner.name} wins by forfeit after ${player.name} ${reason}!`);
+    if (remainingPlayers.length <= 1) {
+      if (remainingPlayers.length === 1) {
+        this.winner = remainingPlayers[0];
+        this.loser = player;
+        this.phase = 'ended';
+        this.addLog(`🏆 ${this.winner.name} wins by forfeit after ${player.name} ${reason}!`);
+      } else {
+        this.phase = 'ended';
+      }
       return true;
     }
 
@@ -362,6 +384,7 @@ class LiarsGame {
       players: this.players.map(p => ({
         id: p.id, name: p.name, isAI: p.isAI,
         connected: p.connected,
+        disconnectDeadline: p.disconnectDeadline || null,
         handCount: p.hand.length,
         hand: p.id === viewerId ? p.hand : undefined,
         passed: this.passedThisRound.has(p.id),
@@ -371,6 +394,7 @@ class LiarsGame {
         order: p.order
       })),
       currentPlayerId: this.phase === 'ended' ? null : this.currentPlayer?.id,
+      turnDeadline: this.turnDeadline || null,
       roundStarterId: this.players[this.roundStarterIndex]?.id,
       discardPile: this.discardPile.map(e => ({
         count: e.cards.length,
@@ -393,8 +417,9 @@ class LiarsGame {
 
 // ─── Room storage ─────────────────────────────────────────────────────────────
 const rooms            = new Map(); // roomCode → room
-const socketSessionMap = new Map(); // socketId → { playerId, roomCode }
-const DISCONNECT_GRACE_MS = 15000;  // 15 seconds grace period for page navigations
+const socketSessionMap = new Map(); // socketId → { playerId, roomCode, lastSeen }
+const DISCONNECT_GRACE_MS = 60000;         // 60 seconds grace period before removing disconnected player
+const DISCONNECTED_TURN_TIMEOUT = 15000;   // 15 seconds turn timeout for offline players before auto-action
 
 function sanitize(room) {
   return {
@@ -407,7 +432,8 @@ function sanitize(room) {
       id: p.id,
       name: normalizePlayerName(p.name),
       isAI: p.isAI,
-      connected: p.connected !== false
+      connected: p.connected !== false,
+      disconnectDeadline: p.disconnectDeadline || null
     }))
   };
 }
@@ -483,7 +509,10 @@ function runAI(room) {
       const r = g.dare(cur.id, move.cardIndex);
       if (r.ok) {
         broadcastDare(room, r);
-        setTimeout(() => { broadcastStates(room); runAI(room); }, 2200);
+        setTimeout(() => {
+          broadcastStates(room);
+          handleTurnProgress(room);
+        }, 2200);
         return;
       }
       // dare failed, fall through to pass
@@ -495,8 +524,116 @@ function runAI(room) {
     }
 
     broadcastStates(room);
-    runAI(room);
+    handleTurnProgress(room);
   }, delay);
+}
+
+function handleTurnProgress(room) {
+  if (!room || !room.game || room.game.phase === 'ended') {
+    if (room?.turnTimer) {
+      clearTimeout(room.turnTimer);
+      room.turnTimer = null;
+    }
+    if (room?.game) room.game.turnDeadline = null;
+    return;
+  }
+
+  if (room.turnTimer) {
+    clearTimeout(room.turnTimer);
+    room.turnTimer = null;
+  }
+  room.game.turnDeadline = null;
+
+  const cur = room.game.currentPlayer;
+  if (!cur || cur.finished || cur.hand.length === 0) {
+    room.game.advancePlayer();
+  }
+
+  const activeCur = room.game.currentPlayer;
+  if (!activeCur || room.game.phase === 'ended') return;
+
+  if (activeCur.isAI) {
+    runAI(room);
+    return;
+  }
+
+  if (!activeCur.connected) {
+    room.game.turnDeadline = Date.now() + DISCONNECTED_TURN_TIMEOUT;
+    broadcastStates(room);
+
+    room.turnTimer = setTimeout(() => {
+      room.turnTimer = null;
+      if (!room.game || room.game.phase === 'ended') return;
+      const nowCur = room.game.currentPlayer;
+      if (!nowCur || nowCur.id !== activeCur.id || nowCur.connected) return;
+
+      console.log(`[!] Auto-turn for disconnected player ${nowCur.name} (${nowCur.id})`);
+      room.game.addLog(`⏳ ${nowCur.name} is offline — auto-advancing turn.`);
+
+      if (room.game.discardPile.length === 0 && nowCur.hand.length > 0) {
+        const card = nowCur.hand[0];
+        room.game.playCards(nowCur.id, [card.id], card.rank);
+      } else {
+        room.game.pass(nowCur.id);
+      }
+
+      broadcastStates(room);
+      handleTurnProgress(room);
+    }, DISCONNECTED_TURN_TIMEOUT);
+    return;
+  }
+
+  broadcastStates(room);
+}
+
+function handlePlayerDisconnectTimeout(roomCode, playerId) {
+  const room = rooms.get(roomCode);
+  if (!room) return;
+
+  const player = room.players.find(p => p.id === playerId);
+  if (!player || player.connected) return;
+
+  console.log(`[x] Disconnect timeout reached for player ${player.name} (${playerId}) in room ${roomCode}`);
+
+  if (room.status === 'waiting') {
+    room.players = room.players.filter(p => p.id !== playerId);
+    const remainingHumans = room.players.filter(p => !p.isAI);
+    if (remainingHumans.length === 0) {
+      console.log(`[x] Room ${roomCode} removed: all human players left.`);
+      rooms.delete(roomCode);
+      return;
+    }
+    if (room.hostId === playerId) {
+      room.hostId = remainingHumans[0].id;
+    }
+    io.to(roomCode).emit('roomUpdate', sanitize(room));
+    return;
+  }
+
+  if (room.game && room.game.phase !== 'ended') {
+    room.game.leavePlayer(playerId, 'was removed after disconnecting');
+    room.players = room.players.filter(p => p.id !== playerId);
+
+    const remainingHumans = room.players.filter(p => !p.isAI);
+    if (room.hostId === playerId && remainingHumans.length > 0) {
+      room.hostId = remainingHumans[0].id;
+    }
+
+    if (remainingHumans.length === 0) {
+      console.log(`[x] Room ${roomCode} removed: all human players disconnected.`);
+      rooms.delete(roomCode);
+      return;
+    }
+
+    if (room.game.phase === 'ended') {
+      room.status = 'ended';
+    } else {
+      handleTurnProgress(room);
+    }
+
+    io.to(roomCode).emit('roomUpdate', sanitize(room));
+    broadcastStates(room);
+  }
 }
 
 // ─── Socket events ────────────────────────────────────────────────────────────
@@ -520,9 +657,11 @@ io.on('connection', socket => {
         name: normalizePlayerName(playerName),
         isAI: false,
         connected: true,
-        disconnectTimer: null
+        disconnectTimer: null,
+        disconnectDeadline: null
       }],
-      game: null
+      game: null,
+      turnTimer: null
     };
 
     if (mode === 'ai') {
@@ -535,7 +674,8 @@ io.on('connection', socket => {
           name: BOT_NAMES[i % BOT_NAMES.length],
           isAI: true,
           connected: true,
-          disconnectTimer: null
+          disconnectTimer: null,
+          disconnectDeadline: null
         });
       }
     }
@@ -561,24 +701,33 @@ io.on('connection', socket => {
         clearTimeout(existing.disconnectTimer);
         existing.disconnectTimer = null;
       }
+      existing.disconnectDeadline = null;
       existing.socketId = socket.id;
       existing.connected = true;
+
       const gamePlayer = room.game?.players.find(p => p.id === pId);
-      if (gamePlayer) gamePlayer.connected = true;
+      if (gamePlayer) {
+        gamePlayer.connected = true;
+        gamePlayer.disconnectDeadline = null;
+      }
       if (typeof playerName === 'string' && playerName.trim()) {
         existing.name = normalizePlayerName(playerName);
       }
 
-      socketSessionMap.set(socket.id, { playerId: pId, roomCode: code });
+      socketSessionMap.set(socket.id, { playerId: pId, roomCode: code, lastSeen: Date.now() });
       socket.join(code);
       io.to(code).emit('roomUpdate', sanitize(room));
 
-      if (room.game) broadcastStates(room);
+      if (room.game) {
+        room.game.addLog(`🎉 ${existing.name} reconnected!`);
+        broadcastStates(room);
+        handleTurnProgress(room);
+      }
       return cb({ ok: true, roomCode: code, room: sanitize(room), isHost: room.hostId === pId });
     }
 
     // New player joining
-    if (room.status !== 'waiting') return cb({ ok: false, err: 'Game already in progress' });
+    if (room.status !== 'waiting') return cb({ ok: false, err: 'Game already in progress or you were removed due to timeout.' });
     if (room.players.length >= room.maxPlayers) return cb({ ok: false, err: 'Room is full' });
 
     room.players.push({
@@ -587,9 +736,10 @@ io.on('connection', socket => {
       name: normalizePlayerName(playerName),
       isAI: false,
       connected: true,
-      disconnectTimer: null
+      disconnectTimer: null,
+      disconnectDeadline: null
     });
-    socketSessionMap.set(socket.id, { playerId: pId, roomCode: code });
+    socketSessionMap.set(socket.id, { playerId: pId, roomCode: code, lastSeen: Date.now() });
     socket.join(code);
     io.to(code).emit('roomUpdate', sanitize(room));
     cb({ ok: true, roomCode: code, room: sanitize(room), isHost: false });
@@ -604,6 +754,11 @@ io.on('connection', socket => {
     if (open) {
       const existing = open.players.find(p => p.id === pId);
       if (existing) {
+        if (existing.disconnectTimer) {
+          clearTimeout(existing.disconnectTimer);
+          existing.disconnectTimer = null;
+        }
+        existing.disconnectDeadline = null;
         existing.socketId = socket.id;
         existing.connected = true;
       } else {
@@ -613,10 +768,11 @@ io.on('connection', socket => {
           name: normalizePlayerName(playerName),
           isAI: false,
           connected: true,
-          disconnectTimer: null
+          disconnectTimer: null,
+          disconnectDeadline: null
         });
       }
-      socketSessionMap.set(socket.id, { playerId: pId, roomCode: open.code });
+      socketSessionMap.set(socket.id, { playerId: pId, roomCode: open.code, lastSeen: Date.now() });
       socket.join(open.code);
       io.to(open.code).emit('roomUpdate', sanitize(open));
 
@@ -625,6 +781,7 @@ io.on('connection', socket => {
         deal(g); open.game = g; open.status = 'playing';
         io.to(open.code).emit('gameStarted', { roomCode: open.code });
         broadcastStates(open);
+        handleTurnProgress(open);
       }
       cb({ ok: true, roomCode: open.code, room: sanitize(open) });
     } else {
@@ -641,12 +798,14 @@ io.on('connection', socket => {
           name: normalizePlayerName(playerName),
           isAI: false,
           connected: true,
-          disconnectTimer: null
+          disconnectTimer: null,
+          disconnectDeadline: null
         }],
-        game: null
+        game: null,
+        turnTimer: null
       };
       rooms.set(code, room);
-      socketSessionMap.set(socket.id, { playerId: pId, roomCode: code });
+      socketSessionMap.set(socket.id, { playerId: pId, roomCode: code, lastSeen: Date.now() });
       socket.join(code);
       cb({ ok: true, roomCode: code, room: sanitize(room), waiting: true });
     }
@@ -743,7 +902,7 @@ io.on('connection', socket => {
     io.to(code).emit('roomUpdate', sanitize(room));
     if (room.game) {
       broadcastStates(room);
-      runAI(room);
+      handleTurnProgress(room);
     }
   });
 
@@ -761,7 +920,7 @@ io.on('connection', socket => {
     deal(g); room.game = g; room.status = 'playing';
     io.to(roomCode).emit('gameStarted', { roomCode });
     broadcastStates(room);
-    runAI(room);
+    handleTurnProgress(room);
     cb({ ok: true });
   });
 
@@ -774,7 +933,7 @@ io.on('connection', socket => {
     const r = room.game.playCards(pId, cardIds, declaredRank);
     if (!r.ok) return cb(r);
     broadcastStates(room); cb({ ok: true });
-    runAI(room);
+    handleTurnProgress(room);
   });
 
   // Dare
@@ -787,7 +946,7 @@ io.on('connection', socket => {
     if (!r.ok) return cb(r);
     broadcastDare(room, r);
     cb({ ok: true, result: r });
-    setTimeout(() => { broadcastStates(room); runAI(room); }, 2500);
+    setTimeout(() => { broadcastStates(room); handleTurnProgress(room); }, 2500);
   });
 
   // Pass
@@ -799,7 +958,13 @@ io.on('connection', socket => {
     const r = room.game.pass(pId);
     if (!r.ok) return cb(r);
     broadcastStates(room); cb({ ok: true });
-    runAI(room);
+    handleTurnProgress(room);
+  });
+
+  // Client heartbeat to maintain connection
+  socket.on('clientHeartbeat', () => {
+    const session = socketSessionMap.get(socket.id);
+    if (session) session.lastSeen = Date.now();
   });
 
   // Emote reaction
@@ -815,9 +980,9 @@ io.on('connection', socket => {
     }
   });
 
-  // Disconnect with grace period
-  socket.on('disconnect', () => {
-    console.log('[-]', socket.id);
+  // Disconnect with 60s grace period and auto-turn progress
+  socket.on('disconnect', (reason) => {
+    console.log(`[-] Socket ${socket.id} disconnected (${reason})`);
     const session = socketSessionMap.get(socket.id);
     if (!session) return;
     const { playerId, roomCode } = session;
@@ -829,31 +994,27 @@ io.on('connection', socket => {
     const player = room.players.find(p => p.id === playerId);
     if (player) {
       player.connected = false;
+      player.socketId = null;
+      const deadline = Date.now() + DISCONNECT_GRACE_MS;
+      player.disconnectDeadline = deadline;
+
       const gamePlayer = room.game?.players.find(p => p.id === playerId);
-      if (gamePlayer) gamePlayer.connected = false;
-      if (room.game) broadcastStates(room);
+      if (gamePlayer) {
+        gamePlayer.connected = false;
+        gamePlayer.disconnectDeadline = deadline;
+      }
+
+      if (room.status === 'waiting') {
+        io.to(roomCode).emit('roomUpdate', sanitize(room));
+      } else if (room.game && room.game.phase !== 'ended') {
+        room.game.addLog(`⚠️ ${player.name} disconnected (reconnect window: 60s)`);
+        broadcastStates(room);
+        handleTurnProgress(room);
+      }
+
+      if (player.disconnectTimer) clearTimeout(player.disconnectTimer);
       player.disconnectTimer = setTimeout(() => {
-        if (!player.connected) {
-          if (room.status === 'waiting') {
-            room.players = room.players.filter(p => p.id !== playerId);
-            const remainingHumans = room.players.filter(p => !p.isAI);
-            if (remainingHumans.length === 0) {
-              console.log(`[x] Room ${roomCode} removed: all human players left.`);
-              rooms.delete(roomCode);
-            } else {
-              if (room.hostId === playerId) {
-                room.hostId = remainingHumans[0].id;
-              }
-              io.to(roomCode).emit('roomUpdate', sanitize(room));
-            }
-          } else if (room.game && room.game.phase !== 'ended') {
-            room.game.leavePlayer(playerId, 'disconnected');
-            if (room.game.phase === 'ended') room.status = 'ended';
-            io.to(roomCode).emit('roomUpdate', sanitize(room));
-            broadcastStates(room);
-            runAI(room);
-          }
-        }
+        handlePlayerDisconnectTimeout(roomCode, playerId);
       }, DISCONNECT_GRACE_MS);
     }
   });

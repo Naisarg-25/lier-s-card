@@ -240,12 +240,66 @@ let prevTurnPlayerId = null;
 let endModalTimer    = null;
 
 /* ─── Socket ────────────────────────────────────────────────────────────────── */
-const socket = io();
+const socket = io({
+  reconnection: true,
+  reconnectionAttempts: Infinity,
+  reconnectionDelay: 1000,
+  reconnectionDelayMax: 4000,
+  timeout: 20000,
+  transports: ['websocket', 'polling']
+});
+
+// Periodic heartbeat to prevent mobile and cloud idle connection drop
+setInterval(() => {
+  if (socket && socket.connected) {
+    socket.volatile.emit('clientHeartbeat');
+  }
+}, 8000);
+
+let reconnectBannerEl = null;
+
+function updateConnectionBanner(isDisconnected, msg = '') {
+  if (!reconnectBannerEl) {
+    reconnectBannerEl = document.createElement('div');
+    reconnectBannerEl.id = 'reconnect-banner';
+    reconnectBannerEl.className = 'reconnect-banner';
+    document.body.appendChild(reconnectBannerEl);
+  }
+  if (isDisconnected) {
+    reconnectBannerEl.className = 'reconnect-banner show warning';
+    reconnectBannerEl.innerHTML = `<span>⚠️</span> <span>${escHtml(msg || 'Connection lost. Reconnecting to table...')}</span>`;
+  } else {
+    reconnectBannerEl.className = 'reconnect-banner show connected';
+    reconnectBannerEl.innerHTML = `<span>✅</span> <span>Reconnected to table!</span>`;
+    setTimeout(() => {
+      if (reconnectBannerEl && !reconnectBannerEl.classList.contains('warning')) {
+        reconnectBannerEl.className = 'reconnect-banner';
+      }
+    }, 2500);
+  }
+}
+
+socket.on('disconnect', (reason) => {
+  console.warn('[Socket] Disconnected:', reason);
+  updateConnectionBanner(true, 'Connection lost. Reconnecting to table...');
+});
+
+socket.on('connect_error', (err) => {
+  console.warn('[Socket] Connection error:', err);
+  updateConnectionBanner(true, 'Reconnecting to game server...');
+});
 
 socket.on('connect', () => {
+  updateConnectionBanner(false);
   socket.emit('joinRoom', { roomCode, playerName: myName, playerId: myId }, (res) => {
     if (!res.ok) {
-      showToast('Connecting to table...', 'info');
+      showToast(res.err || 'Connecting to table...', 'info');
+      if (res.err && (res.err.includes('removed') || res.err.includes('not found'))) {
+        alert(res.err);
+        location.href = '/';
+      }
+    } else {
+      showToast('Connected to game table', 'success', 2000);
     }
   });
 
@@ -585,7 +639,12 @@ function renderGameState(state) {
       turnBanner.className = 'turn-banner my-turn';
     } else {
       const cur = state.players.find(p => p.id === state.currentPlayerId);
-      bannerText.textContent = cur ? `${cur.name} is thinking...` : 'Waiting for next player...';
+      if (cur && cur.connected === false) {
+        const turnSec = state.turnDeadline ? Math.max(0, Math.ceil((state.turnDeadline - Date.now()) / 1000)) : 15;
+        bannerText.textContent = `⏳ ${cur.name} is offline — auto-move in ${turnSec}s...`;
+      } else {
+        bannerText.textContent = cur ? `${cur.name} is thinking...` : 'Waiting for next player...';
+      }
       turnBanner.className = 'turn-banner other-turn';
     }
   }
@@ -711,12 +770,26 @@ function renderOpponents(state) {
 
     let statusTxt   = '';
     let statusClass = '';
+    const now = Date.now();
+    const isDisconnected = p.connected === false && !isFinished;
+
     if (isWinner) {
       statusTxt = '🏆 WINNER'; statusClass = 'status-finished';
     } else if (isLoser) {
       statusTxt = '💀 LOSER'; statusClass = 'status-passed';
-    } else if (p.connected === false) {
-      statusTxt = '📴 Disconnected'; statusClass = 'status-passed';
+    } else if (isDisconnected) {
+      let secondsLeft = 60;
+      if (p.disconnectDeadline) {
+        secondsLeft = Math.max(0, Math.ceil((p.disconnectDeadline - now) / 1000));
+      }
+      if (isCurrentTurn && state.turnDeadline) {
+        const turnSec = Math.max(0, Math.ceil((state.turnDeadline - now) / 1000));
+        statusTxt = `⏳ Turn (${turnSec}s)`;
+        statusClass = 'status-disconnected';
+      } else {
+        statusTxt = `📴 Offline (${secondsLeft}s)`;
+        statusClass = 'status-disconnected';
+      }
     } else if (p.pendingFinish) {
       statusTxt = '⚠️ Empty!'; statusClass = 'status-empty';
     } else if (isFinished) {
@@ -733,7 +806,7 @@ function renderOpponents(state) {
 
     panel.innerHTML = `
       <div class="opp-avatar-wrap">
-        <div class="opp-avatar ${p.isAI ? 'ai' : ''} ${isFinished ? 'finished' : ''} ${isLoser ? 'loser' : ''}">
+        <div class="opp-avatar ${p.isAI ? 'ai' : ''} ${isFinished ? 'finished' : ''} ${isLoser ? 'loser' : ''} ${isDisconnected ? 'disconnected' : ''}">
           ${isCurrentTurn ? '<div class="turn-ring"></div>' : ''}
           ${p.isAI ? '🤖' : escHtml(p.name.charAt(0).toUpperCase())}
         </div>
@@ -1234,3 +1307,19 @@ window.addEventListener('keydown', (e) => {
     }
   }
 });
+
+/* ─── Realtime Disconnect & Turn Countdown Ticker ────────────────────────── */
+setInterval(() => {
+  if (gameState && !document.hidden && gameState.phase !== 'ended') {
+    const hasTimers = gameState.turnDeadline || gameState.players?.some(p => p.disconnectDeadline);
+    if (hasTimers) {
+      renderOpponents(gameState);
+      const cur = gameState.players.find(p => p.id === gameState.currentPlayerId);
+      if (cur && cur.connected === false && gameState.turnDeadline) {
+        const bannerText = document.querySelector('.turn-banner-text');
+        const turnSec = Math.max(0, Math.ceil((gameState.turnDeadline - Date.now()) / 1000));
+        if (bannerText) bannerText.textContent = `⏳ ${cur.name} is offline — auto-move in ${turnSec}s...`;
+      }
+    }
+  }
+}, 1000);

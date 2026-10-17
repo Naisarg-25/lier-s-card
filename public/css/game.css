@@ -326,6 +326,62 @@ html, body {
   50% { opacity: 0.4; }
 }
 
+.opp-status-badge.status-disconnected {
+  color: #fb923c;
+  font-weight: 700;
+  animation: pulse-warn 1.2s infinite;
+}
+
+.opp-avatar.disconnected {
+  opacity: 0.6;
+  filter: grayscale(0.5);
+  box-shadow: 0 0 0 2px #fb923c, 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* ─── Reconnection Top Banner ──────────────────────────────────────────────── */
+.reconnect-banner {
+  position: fixed;
+  top: 54px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-24px);
+  padding: 8px 20px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 99999;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reconnect-banner.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.reconnect-banner.warning {
+  background: rgba(180, 83, 9, 0.95);
+  border: 1px solid rgba(245, 158, 11, 0.6);
+  color: #fff;
+  animation: banner-pulse 1.8s infinite;
+}
+
+.reconnect-banner.connected {
+  background: rgba(16, 185, 129, 0.95);
+  border: 1px solid rgba(52, 211, 153, 0.6);
+  color: #fff;
+}
+
+@keyframes banner-pulse {
+  0%, 100% { box-shadow: 0 0 10px rgba(245, 158, 11, 0.4); }
+  50% { box-shadow: 0 0 24px rgba(245, 158, 11, 0.8); }
+}
+
 .opp-card-chip {
   font-size: 0.72rem;
   font-weight: 800;
