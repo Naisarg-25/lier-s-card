@@ -59,6 +59,7 @@ class LiarsGame {
     this.declaredRank  = null;
     this.currentPlayerIndex  = 0;
     this.roundStarterIndex   = 0;
+    this.winner        = null;
     this.loser         = null;
     this.log           = [];
     this.aiTimerActive = false;
@@ -108,6 +109,11 @@ class LiarsGame {
       return false;
     }
 
+    if (this.winner) {
+      this.phase = 'ended';
+      return true;
+    }
+
     const active = this.activePlayers;
     if (active.length <= 1) {
       this.phase = 'ended';
@@ -121,10 +127,30 @@ class LiarsGame {
     return false;
   }
 
+  confirmPendingWinner() {
+    const winner = this.players.find(p => p.pendingFinish);
+    if (!winner) return false;
+
+    winner.pendingFinish = false;
+    winner.finished = true;
+    this.winner = winner;
+    this.phase = 'ended';
+    this.addLog(`🏆 ${winner.name} emptied their hand and won the game!`);
+    return true;
+  }
+
   leavePlayer(playerId) {
     if (this.phase === 'ended') return false;
     const player = this.players.find(p => p.id === playerId);
     if (!player || player.finished) return false;
+
+    if (this.currentPlayer?.id === playerId && this.confirmPendingWinner()) {
+      player.finished = true;
+      player.pendingFinish = false;
+      player.hand = [];
+      this.addLog(`${player.name} left the game`);
+      return true;
+    }
 
     player.finished = true;
     player.pendingFinish = false;
@@ -170,14 +196,8 @@ class LiarsGame {
     const played = cardIds.map(id => player.hand.find(c => c.id === id)).filter(Boolean);
     if (played.length !== cardIds.length) return { ok: false, err: 'Invalid card(s) selected' };
 
-    // Any previous player whose empty hand went unchallenged is now officially finished
-    this.players.forEach(p => {
-      if (p.pendingFinish && p.id !== player.id) {
-        p.pendingFinish = false;
-        p.finished = true;
-        this.addLog(`🎉 ${p.name}'s play went unchallenged — officially finished!`);
-      }
-    });
+    // Playing instead of daring confirms the previous empty-handed player's win.
+    if (this.confirmPendingWinner()) return { ok: true, gameEnded: true, winnerId: this.winner.id };
 
     // Remove from hand
     player.hand = player.hand.filter(c => !cardIds.includes(c.id));
@@ -235,7 +255,9 @@ class LiarsGame {
       if (lastPlayer.pendingFinish) {
         lastPlayer.pendingFinish = false;
         lastPlayer.finished = true;
-        this.addLog(`🎉 ${lastPlayer.name} told the truth on their last play and WON!`);
+        this.winner = lastPlayer;
+        this.phase = 'ended';
+        this.addLog(`🏆 ${lastPlayer.name} told the truth on their last play and won the game!`);
       }
     } else {
       // Last player lied → they get penalty
@@ -270,6 +292,11 @@ class LiarsGame {
         : `${lastPlayer.name} was LYING! They take ${allDiscards.length} cards!`
     };
 
+    if (this.phase === 'ended') {
+      result.gameEnded = true;
+      return result;
+    }
+
     this.startNewRound(nextStarterIdx);
     if (this.checkEnd()) result.gameEnded = true;
     return result;
@@ -286,13 +313,9 @@ class LiarsGame {
     this.passedThisRound.add(playerId);
     this.addLog(`${player.name} passed`);
 
-    // If opponent had pendingFinish, check if this pass confirms their finish
-    const pendingPlayer = this.players.find(p => p.pendingFinish);
-    if (pendingPlayer && (this.activePlayers.length <= 2 || this.allPassed())) {
-      pendingPlayer.pendingFinish = false;
-      pendingPlayer.finished = true;
-      this.addLog(`🎉 ${pendingPlayer.name} was not dared — confirmed finished!`);
-      if (this.checkEnd()) return { ok: true, gameEnded: true };
+    // Passing instead of daring confirms the empty-handed player's win.
+    if (this.confirmPendingWinner()) {
+      return { ok: true, gameEnded: true, winnerId: this.winner.id };
     }
 
     if (this.allPassed()) {
@@ -345,6 +368,7 @@ class LiarsGame {
       tempPileCount:   this.tempPile.length,
       declaredRank:    this.declaredRank,
       phase:           this.phase,
+      winner:          this.winner ? { id: this.winner.id, name: this.winner.name } : null,
       loser:           this.loser ? { id: this.loser.id, name: this.loser.name } : null,
       gameLog:         this.log,
     };

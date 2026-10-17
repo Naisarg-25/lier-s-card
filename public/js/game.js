@@ -694,6 +694,7 @@ function renderOpponents(state) {
     const isPassed      = p.passed;
     const isFinished    = p.finished;
     const isLoser       = p.isLoser;
+    const isWinner      = state.winner?.id === p.id;
     const isDareTarget  = state.lastPlayerId === p.id && state.discardPile.length > 0;
 
     const panel = document.createElement('div');
@@ -702,7 +703,9 @@ function renderOpponents(state) {
 
     let statusTxt   = '';
     let statusClass = '';
-    if (isLoser) {
+    if (isWinner) {
+      statusTxt = '🏆 WINNER'; statusClass = 'status-finished';
+    } else if (isLoser) {
       statusTxt = '💀 LOSER'; statusClass = 'status-passed';
     } else if (p.pendingFinish) {
       statusTxt = '⚠️ Empty!'; statusClass = 'status-empty';
@@ -901,15 +904,20 @@ function showEndModal(state) {
 
   const me = state.players.find(p => p.id === myId);
   const isLoser = me?.isLoser || (state.loser?.id === myId);
+  const isWinner = state.winner?.id === myId;
 
   if (trophy) trophy.textContent = isLoser ? '💀' : '🏆';
   if (title) {
-    title.textContent = isLoser ? 'YOU LOSE!' : 'YOU WIN!';
+    title.textContent = isLoser ? 'YOU LOSE!' : isWinner ? 'YOU WIN!' : 'GAME OVER';
     title.className = `end-title ${isLoser ? 'lose' : 'win'}`;
   }
   if (message) {
     if (isLoser) {
       message.textContent = `You were the last player holding cards! Better luck next round, ${myName}!`;
+    } else if (isWinner) {
+      message.textContent = `You emptied your hand and won the game! Spectacular victory, ${myName}! 🎉`;
+    } else if (state.winner) {
+      message.textContent = `${state.winner.name} won the game! Better luck next round, ${myName}.`;
     } else if (state.loser) {
       message.textContent = `${state.loser.name} was caught holding cards at the end. Spectacular victory, ${myName}! 🎉`;
     } else {

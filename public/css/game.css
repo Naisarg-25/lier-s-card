@@ -1828,3 +1828,206 @@ html, body {
 @media (max-width: 380px) {
   .nav-pile-info { display: none; }
 }
+
+@media (orientation: landscape) and (max-height: 650px) {
+  .game-nav {
+    height: 34px;
+    min-height: 34px;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .game-main,
+  .table-area {
+    min-height: 0;
+  }
+
+  .table-area {
+    padding: 3px 5px;
+    gap: 3px;
+  }
+
+  .opponents-row {
+    min-height: 28px;
+    max-height: 30px;
+  }
+
+  .opponent-panel {
+    min-width: 0;
+    padding: 2px 5px;
+    gap: 4px;
+  }
+
+  .opp-avatar {
+    width: 20px;
+    height: 20px;
+    font-size: 0.62rem;
+  }
+
+  .opp-name,
+  .opp-card-chip {
+    font-size: 0.56rem;
+  }
+
+  .game-table-center {
+    min-height: 0;
+    padding: 3px 6px;
+    border-width: 2px;
+    border-radius: 12px;
+  }
+
+  .table-top-bar {
+    gap: 4px;
+  }
+
+  .turn-banner {
+    gap: 4px;
+    padding: 2px 7px;
+    font-size: 0.58rem;
+  }
+
+  .turn-banner-dot {
+    width: 5px;
+    height: 5px;
+  }
+
+  .table-bottom-bar {
+    gap: 4px;
+  }
+
+  .table-emotes-bar {
+    gap: 1px;
+    padding: 1px 3px;
+  }
+
+  .emote-btn {
+    font-size: 0.72rem;
+    padding: 1px;
+  }
+
+  .action-buttons {
+    gap: 4px;
+  }
+
+  .action-btn {
+    flex-direction: row;
+    justify-content: center;
+    gap: 3px;
+    min-height: 25px;
+    padding: 3px 5px;
+    border-radius: 6px;
+  }
+
+  .action-btn-icon { font-size: 0.72rem; }
+  .action-btn-main { font-size: 0.58rem; }
+  .action-btn-label { display: none; }
+
+  .my-hand-area {
+    min-height: 0;
+    max-height: 60dvh;
+    padding: 3px 6px;
+    gap: 2px;
+    overflow: hidden;
+  }
+
+  .rank-selector {
+    min-height: 22px;
+    gap: 4px;
+    padding: 2px 5px;
+  }
+
+  .rank-selector-title { font-size: 0.56rem; }
+
+  .rank-selector-buttons {
+    min-width: 0;
+    gap: 2px;
+    overflow-x: auto;
+  }
+
+  .rank-btn {
+    padding: 1px 4px;
+    font-size: 0.58rem;
+  }
+
+  .staging-tray {
+    min-height: 0;
+    max-height: 22dvh;
+    gap: 1px;
+    padding: 2px 4px;
+    overflow: hidden;
+  }
+
+  .staging-header { min-height: 14px; }
+  .staging-title,
+  .staging-help-hint { font-size: 0.54rem; }
+  .staging-actions { gap: 2px; }
+  .staging-btn { padding: 1px 3px; font-size: 0.52rem; }
+
+  .staging-cards-row {
+    min-height: 0;
+    max-height: calc(22dvh - 16px);
+    gap: 3px;
+    padding: 1px 2px;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .staged-slot {
+    min-width: 42px;
+    gap: 1px;
+    padding: 1px 2px;
+  }
+
+  .staged-slot-badge { font-size: 0.48rem; }
+  .staged-slot-card { width: 24px; height: 32px; }
+  .staged-slot-card .card-rank { font-size: 0.58rem; }
+  .staged-slot-card .card-suit-sm { font-size: 0.5rem; }
+  .staged-slot-card .card-suit-center { font-size: 0.9rem; }
+  .staged-truth-tag { display: none; }
+  .staged-controls { gap: 1px; }
+  .staged-move-btn,
+  .staged-remove-btn {
+    padding: 1px 3px;
+    font-size: 0.52rem;
+  }
+
+  .hand-info-row {
+    min-height: 14px;
+    flex-shrink: 0;
+  }
+
+  .hand-label,
+  .hand-counter-badge,
+  .hand-selected-info,
+  .sort-label,
+  .sort-btn {
+    font-size: 0.52rem;
+  }
+
+  .my-hand-cards {
+    height: clamp(48px, 15dvh, 68px);
+    min-height: 48px;
+    max-height: 68px;
+    padding: 2px 4px 1px;
+    flex: 1 1 48px;
+  }
+
+  .play-card {
+    width: 40px;
+    height: clamp(44px, 13dvh, 60px);
+    margin-right: -15px;
+    padding: 2px;
+    border-radius: 5px;
+  }
+
+  .card-rank { font-size: 0.58rem; }
+  .card-suit-sm { font-size: 0.5rem; }
+  .card-suit-center { font-size: 1rem; }
+}
+
+@media (orientation: landscape) and (max-height: 360px) {
+  .opponents-row,
+  .table-emotes-bar {
+    display: none;
+  }
+}
