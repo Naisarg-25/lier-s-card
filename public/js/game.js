@@ -237,6 +237,7 @@ let dareCardIdx      = null;       // card index selected in dare modal
 let dareResolved     = false;      // dare modal showing result
 let handSortMode     = 'rank';     // 'rank' | 'suit'
 let prevTurnPlayerId = null;
+let endModalTimer    = null;
 
 /* ─── Socket ────────────────────────────────────────────────────────────────── */
 const socket = io();
@@ -637,8 +638,15 @@ function renderGameState(state) {
   renderGameLog(state.gameLog);
 
   // Game end
-  if (isEnded && !dareResolved) {
-    setTimeout(() => showEndModal(state), 1200);
+  if (isEnded && endModalTimer === null && !document.getElementById('end-modal')?.classList.contains('open')) {
+    const delay = dareResolved ? 1600 : 1200;
+    endModalTimer = setTimeout(() => {
+      endModalTimer = null;
+      if (gameState?.phase === 'ended') {
+        closeModal('dare-modal');
+        showEndModal(gameState);
+      }
+    }, delay);
   }
 }
 
@@ -707,6 +715,8 @@ function renderOpponents(state) {
       statusTxt = '🏆 WINNER'; statusClass = 'status-finished';
     } else if (isLoser) {
       statusTxt = '💀 LOSER'; statusClass = 'status-passed';
+    } else if (p.connected === false) {
+      statusTxt = '📴 Disconnected'; statusClass = 'status-passed';
     } else if (p.pendingFinish) {
       statusTxt = '⚠️ Empty!'; statusClass = 'status-empty';
     } else if (isFinished) {
@@ -913,7 +923,9 @@ function showEndModal(state) {
   }
   if (message) {
     if (isLoser) {
-      message.textContent = `You were the last player holding cards! Better luck next round, ${myName}!`;
+      message.textContent = state.winner
+        ? `${state.winner.name} won after you left or disconnected.`
+        : `You were the last player holding cards! Better luck next round, ${myName}!`;
     } else if (isWinner) {
       message.textContent = `You emptied your hand and won the game! Spectacular victory, ${myName}! 🎉`;
     } else if (state.winner) {

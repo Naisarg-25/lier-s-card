@@ -51,6 +51,7 @@ class LiarsGame {
     this.phase = 'playing'; // 'playing' | 'ended'
     this.players = playerDefs.map((p, i) => ({
       id: p.id, name: normalizePlayerName(p.name), isAI: p.isAI || false,
+      connected: p.connected !== false,
       hand: [], finished: false, pendingFinish: false, isLoser: false, order: i
     }));
     this.discardPile   = []; // [{cards, declaredRank, playerId, playerName}]
@@ -139,7 +140,7 @@ class LiarsGame {
     return true;
   }
 
-  leavePlayer(playerId) {
+  leavePlayer(playerId, reason = 'left the game') {
     if (this.phase === 'ended') return false;
     const player = this.players.find(p => p.id === playerId);
     if (!player || player.finished) return false;
@@ -147,18 +148,32 @@ class LiarsGame {
     if (this.currentPlayer?.id === playerId && this.confirmPendingWinner()) {
       player.finished = true;
       player.pendingFinish = false;
+      player.connected = false;
+      player.isLoser = true;
+      this.loser = player;
       player.hand = [];
-      this.addLog(`${player.name} left the game`);
+      this.addLog(`${player.name} ${reason}`);
       return true;
     }
 
     player.finished = true;
     player.pendingFinish = false;
+    player.connected = false;
+    player.isLoser = true;
     player.hand = [];
     this.passedThisRound.delete(playerId);
-    this.addLog(`${player.name} left the game`);
+    this.addLog(`${player.name} ${reason}`);
 
     if (this.currentPlayer?.id === playerId) this.advancePlayer();
+
+    const remainingPlayers = this.activePlayers;
+    if (remainingPlayers.length === 1) {
+      this.winner = remainingPlayers[0];
+      this.loser = player;
+      this.phase = 'ended';
+      this.addLog(`🏆 ${this.winner.name} wins by forfeit after ${player.name} ${reason}!`);
+      return true;
+    }
 
     if (this.allPassed()) {
       this.players.forEach(p => {
@@ -346,6 +361,7 @@ class LiarsGame {
     return {
       players: this.players.map(p => ({
         id: p.id, name: p.name, isAI: p.isAI,
+        connected: p.connected,
         handCount: p.hand.length,
         hand: p.id === viewerId ? p.hand : undefined,
         passed: this.passedThisRound.has(p.id),
@@ -547,6 +563,8 @@ io.on('connection', socket => {
       }
       existing.socketId = socket.id;
       existing.connected = true;
+      const gamePlayer = room.game?.players.find(p => p.id === pId);
+      if (gamePlayer) gamePlayer.connected = true;
       if (typeof playerName === 'string' && playerName.trim()) {
         existing.name = normalizePlayerName(playerName);
       }
@@ -555,9 +573,7 @@ io.on('connection', socket => {
       socket.join(code);
       io.to(code).emit('roomUpdate', sanitize(room));
 
-      if (room.game) {
-        socket.emit('gameState', room.game.stateFor(pId));
-      }
+      if (room.game) broadcastStates(room);
       return cb({ ok: true, roomCode: code, room: sanitize(room), isHost: room.hostId === pId });
     }
 
@@ -706,6 +722,7 @@ io.on('connection', socket => {
 
     const [player] = room.players.splice(playerIndex, 1);
     if (player.disconnectTimer) clearTimeout(player.disconnectTimer);
+    player.connected = false;
     socketSessionMap.delete(socket.id);
 
     if (room.game) room.game.leavePlayer(playerId);
@@ -812,6 +829,9 @@ io.on('connection', socket => {
     const player = room.players.find(p => p.id === playerId);
     if (player) {
       player.connected = false;
+      const gamePlayer = room.game?.players.find(p => p.id === playerId);
+      if (gamePlayer) gamePlayer.connected = false;
+      if (room.game) broadcastStates(room);
       player.disconnectTimer = setTimeout(() => {
         if (!player.connected) {
           if (room.status === 'waiting') {
@@ -826,6 +846,12 @@ io.on('connection', socket => {
               }
               io.to(roomCode).emit('roomUpdate', sanitize(room));
             }
+          } else if (room.game && room.game.phase !== 'ended') {
+            room.game.leavePlayer(playerId, 'disconnected');
+            if (room.game.phase === 'ended') room.status = 'ended';
+            io.to(roomCode).emit('roomUpdate', sanitize(room));
+            broadcastStates(room);
+            runAI(room);
           }
         }
       }, DISCONNECT_GRACE_MS);
