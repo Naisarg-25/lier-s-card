@@ -1,0 +1,24 @@
+i want game that player play with playing card that called liers cards game
+
+game for multiplayer players
+
+rules:
+1. player has 3 options [play][dare][pass]
+if player 1 play cards like 5 1 that can be right or wrong cards then all player only can play 1 card
+if player 2 choss play then need to play card like 3 1 that can be true or wrong if player 2 choss dare then
+player 2 need to choose player 1 5 card if chosed card was right then all discard card goes to player 2 hand next round start with player 1 other 
+wise all discard card goes into player 1 hand and next round start with player 2 if player 2 choss pass then player 2 true skip for all roung
+
+2. if all player pass then all discard cards goes into temp pile that not playable now and if player 3 start turn like 3 card of king
+then all player pass including player 3 then next turn strat with player 3 that can choose anything that want to play
+
+if player hand was empty thrn other player game countinue til 1 player has not empty hand his lose game
+
+3.i want 3 lobbys [with friends][with randoms][with ai]
+
+with friend lobby 1 player create room that room code share with friends and other  player can join this room
+host only start game, also remove player
+
+with randoms lobby random player join and room full then game start
+
+with ai player choose number of bot for room 

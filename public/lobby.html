@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lobby — Liar's Cards</title>
+  <meta name="description" content="Room lobby for Liar's Cards. Wait for friends to join, then start the game." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🃏</text></svg>" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <div class="stars-bg"></div>
+  <div class="nebula"></div>
+
+  <div class="lobby-page">
+
+    <!-- Header -->
+    <div class="lobby-header fade-in">
+      <a href="/" style="text-decoration:none;">
+        <span class="cinzel text-gold" style="font-size:1.5rem;">🃏 LIAR'S CARDS</span>
+      </a>
+      <div id="mode-badge-container" style="margin-top:12px;"></div>
+    </div>
+
+    <div class="lobby-content fade-in-delay">
+
+      <!-- Room code -->
+      <div class="room-code-section" id="code-section">
+        <div class="room-code-label">Room Code</div>
+        <div class="room-code-value" id="room-code-display">------</div>
+        <div class="room-code-hint">Share this code with friends to invite them</div>
+        <div style="margin-top:16px;display:flex;gap:10px;justify-content:center;">
+          <button class="btn btn-ghost btn-sm" id="copy-code-btn">📋 Copy Code</button>
+          <button class="btn btn-ghost btn-sm" id="copy-link-btn">🔗 Copy Link</button>
+        </div>
+      </div>
+
+      <!-- Waiting for random message (hidden by default) -->
+      <div class="waiting-indicator" id="random-waiting" style="display:none;">
+        <div class="waiting-dots"><span></span><span></span><span></span></div>
+        <span>Waiting for players to join... (<span id="player-count-waiting">1</span>/4)</span>
+      </div>
+
+      <!-- Players list -->
+      <div class="players-section">
+        <div class="section-header" style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="section-title">Players</span>
+            <span class="player-count" id="player-count">1 / 6</span>
+          </div>
+          <button class="add-bot-btn" id="add-bot-btn" style="display:none;" title="Add an AI Bot opponent">
+            🤖 + Add AI Bot
+          </button>
+        </div>
+        <div class="player-list" id="player-list">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="lobby-actions" id="lobby-actions">
+        <button class="btn btn-ghost" id="leave-btn">🚪 Exit Lobby</button>
+        <button class="btn btn-primary btn-lg" id="start-btn" disabled>
+          ⚔️ Start Game
+        </button>
+      </div>
+
+      <!-- Waiting indicator for non-hosts -->
+      <div class="waiting-indicator" id="waiting-for-host" style="display:none;">
+        <div class="waiting-dots"><span></span><span></span><span></span></div>
+        <span>Waiting for the host to start the game...</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast-container"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/lobby.js"></script>
+</body>
+</html>

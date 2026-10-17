@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Liar's Cards — The Ultimate Bluffing Card Game</title>
+  <meta name="description" content="Play Liar's Cards online with friends, random players, or AI bots. Bluff, dare, and outwit your opponents in this real-time multiplayer card game." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🃏</text></svg>" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <div class="stars-bg"></div>
+  <div class="nebula"></div>
+
+  <!-- Floating background cards -->
+  <div class="bg-cards">
+    <div class="bg-card"></div><div class="bg-card"></div>
+    <div class="bg-card"></div><div class="bg-card"></div>
+    <div class="bg-card"></div><div class="bg-card"></div>
+    <div class="bg-card"></div><div class="bg-card"></div>
+  </div>
+
+  <div class="landing">
+    <div class="landing-inner">
+
+      <!-- Logo -->
+      <div class="landing-logo fade-in">
+        <div class="logo-suit-row">
+          <span class="suit-black">♠</span>
+          <span class="suit-red">♥</span>
+          <span class="suit-red">♦</span>
+          <span class="suit-black">♣</span>
+        </div>
+        <h1 class="logo-title cinzel">LIAR'S CARDS</h1>
+        <p class="logo-sub">The Ultimate Multiplayer Bluffing Game</p>
+      </div>
+
+      <!-- Name input -->
+      <div class="name-section fade-in-delay">
+        <label class="name-label" for="player-name">Your Name</label>
+        <input
+          type="text" id="player-name" class="input-field"
+          placeholder="Enter your name..." maxlength="20"
+          autocomplete="off" spellcheck="false"
+          style="text-align:center;font-size:1.1rem;font-weight:600;max-width:340px;"
+        />
+      </div>
+
+      <!-- Lobby mode cards -->
+      <div class="lobby-cards fade-in-delay">
+        <div class="lobby-card friends" id="btn-friends" tabindex="0" role="button" aria-label="Play with Friends">
+          <span class="lobby-card-badge">UP TO 6</span>
+          <span class="lobby-card-icon">🤝</span>
+          <div class="lobby-card-title">With Friends</div>
+          <div class="lobby-card-desc">Create a private room, share the code, and play with your squad.</div>
+        </div>
+
+        <div class="lobby-card randoms" id="btn-randoms" tabindex="0" role="button" aria-label="Play with Random Players">
+          <span class="lobby-card-badge">4 PLAYERS</span>
+          <span class="lobby-card-icon">🌍</span>
+          <div class="lobby-card-title">With Randoms</div>
+          <div class="lobby-card-desc">Jump into a random room and prove yourself against strangers.</div>
+        </div>
+
+        <div class="lobby-card ai" id="btn-ai" tabindex="0" role="button" aria-label="Play with AI Bots">
+          <span class="lobby-card-badge">1–5 BOTS</span>
+          <span class="lobby-card-icon">🤖</span>
+          <div class="lobby-card-title">With AI</div>
+          <div class="lobby-card-desc">Practice your bluffing skills against our devious AI opponents.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Toast container -->
+  <div id="toast-container"></div>
+
+  <!-- AI Bot count modal -->
+  <div class="modal-overlay" id="ai-modal">
+    <div class="modal-box">
+      <h2 style="margin-bottom:6px;font-size:1.4rem;">Choose AI Opponents</h2>
+      <p class="text-dim" style="margin-bottom:28px;font-size:0.9rem;">How many bots do you want to face?</p>
+      <div class="ai-modal-body">
+        <div>
+          <div class="bot-count-display" id="bot-count-display">1</div>
+          <div class="bot-count-label text-dim">AI Bot (can add/remove in lobby)</div>
+        </div>
+        <div class="slider-row">
+          <span class="range-label">1</span>
+          <input type="range" id="bot-count-slider" class="range-input" min="1" max="5" value="1" />
+          <span class="range-label">5</span>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:8px;">
+          <button class="btn btn-ghost" id="ai-cancel" style="flex:1">Cancel</button>
+          <button class="btn btn-primary" id="ai-confirm" style="flex:1">🤖 Enter AI Lobby</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Join room modal (for friends who enter a code) -->
+  <div class="modal-overlay" id="join-modal">
+    <div class="modal-box">
+      <h2 style="margin-bottom:6px;font-size:1.4rem;">Join a Room</h2>
+      <p class="text-dim" style="margin-bottom:24px;font-size:0.9rem;">Enter the 6-character room code shared by your friend.</p>
+      <div class="join-modal-body">
+        <input
+          type="text" id="room-code-input" class="input-field"
+          placeholder="E.g. ABCD12" maxlength="6"
+          autocomplete="off" spellcheck="false"
+          style="text-align:center;font-size:1.6rem;letter-spacing:0.3em;font-weight:700;text-transform:uppercase;"
+        />
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-ghost" id="join-cancel" style="flex:1">Cancel</button>
+          <button class="btn btn-primary" id="join-confirm" style="flex:1">Join Room</button>
+        </div>
+        <div style="text-align:center;padding-top:4px;">
+          <button class="btn btn-ghost btn-sm" id="btn-create-friend">Or create a new room →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Waiting for random modal -->
+  <div class="modal-overlay" id="waiting-modal">
+    <div class="modal-box" style="text-align:center;">
+      <div style="font-size:3rem;margin-bottom:16px;animation:suit-float 2s ease-in-out infinite;">🌍</div>
+      <h2 style="margin-bottom:8px;">Finding Players...</h2>
+      <p class="text-dim" style="margin-bottom:24px;">Room created! Waiting for other players to join.</p>
+      <div class="waiting-indicator" style="justify-content:center;margin-bottom:24px;">
+        <div class="waiting-dots"><span></span><span></span><span></span></div>
+        <span>Searching for players</span>
+      </div>
+      <div class="room-code-value" id="waiting-code" style="font-size:2rem;margin-bottom:16px;"></div>
+      <p class="text-dim" style="font-size:0.8rem;margin-bottom:20px;">Share this code to invite friends instead!</p>
+      <button class="btn btn-ghost btn-sm" id="cancel-waiting">🚪 Exit Matchmaking</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/main.js"></script>
+</body>
+</html>

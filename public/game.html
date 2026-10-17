@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Game — Liar's Cards</title>
+  <meta name="description" content="Play Liar's Cards in real-time. Bluff, dare, and outlast your opponents." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🃏</text></svg>" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/game.css" />
+</head>
+<body>
+  <!-- Background atmosphere -->
+  <div class="stars-bg"></div>
+  <div class="nebula"></div>
+
+  <div class="game-page">
+
+    <!-- Top Luxury Navigation -->
+    <nav class="game-nav">
+      <div class="nav-left">
+        <span class="game-nav-logo">🃏 LIAR'S CARDS</span>
+        <button class="nav-icon-btn" id="nav-rules-btn" title="View Game Rules">
+          <span class="nav-btn-icon">❓</span>
+          <span class="nav-btn-text">Rules</span>
+        </button>
+      </div>
+
+      <div class="nav-center">
+        <div class="nav-room-code">
+          <span class="nav-label">ROOM:</span>
+          <span class="nav-code" id="nav-room-code">------</span>
+          <button class="nav-copy" id="nav-copy-btn" title="Copy room code">📋</button>
+        </div>
+      </div>
+
+      <div class="nav-right">
+        <button class="nav-icon-btn nav-exit-btn" id="nav-exit-btn" title="Exit game">
+          <span>🚪</span>
+          <span class="nav-btn-text">Exit</span>
+        </button>
+        <button class="nav-icon-btn sound-toggle" id="nav-sound-btn" title="Toggle Sound">
+          <span id="sound-icon">🔊</span>
+          <span class="nav-btn-text" id="sound-text">Sound</span>
+        </button>
+        <div class="nav-pile-info" title="Locked unplayable cards">
+          <span class="vault-icon">🔒</span>
+          <span class="vault-label">Locked:</span>
+          <span class="pile-count" id="temp-pile-count">0</span>
+        </div>
+        <button class="nav-icon-btn log-toggle-btn" id="nav-log-toggle" title="Toggle Game Log">
+          <span>📜</span>
+          <span class="nav-btn-text">Feed</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Main Game Arena -->
+    <div class="game-main">
+
+      <!-- Table Center Column -->
+      <div class="table-area">
+
+        <!-- Opponents Poker Ring (Seated neatly above felt) -->
+        <div class="opponents-row" id="opponents-row">
+          <!-- Populated dynamically by JS -->
+        </div>
+
+        <!-- High-Stakes Casino Poker Table -->
+        <div class="game-table-center" id="game-table">
+          <div class="table-rail"></div>
+          <div class="felt-texture"></div>
+          <div class="table-spotlight"></div>
+
+          <!-- Top Row inside Table: Turn Banner + Declared Claim Billboard -->
+          <div class="table-top-bar">
+            <!-- Turn Banner -->
+            <div class="turn-banner other-turn" id="turn-banner">
+              <div class="turn-banner-dot"></div>
+              <span class="turn-banner-text">Connecting to table...</span>
+            </div>
+
+            <!-- Declared Claim Billboard -->
+            <div class="declared-rank-display" id="declared-rank-display">
+              <span class="declared-crown">👑</span>
+              <div class="declared-meta">
+                <span class="declared-label">CURRENT CLAIM</span>
+                <span class="declared-rank-val" id="declared-rank-val">—</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Middle: Discard Pile on Table Felt -->
+          <div class="discard-pile-area">
+            <div class="discard-header">
+              <span class="discard-pile-label">TABLE PILE</span>
+              <span class="discard-total-badge" id="discard-total-badge">0 cards</span>
+            </div>
+            <div class="discard-stack" id="discard-stack">
+              <div class="discard-empty" id="discard-empty-msg">
+                <span class="empty-icon">🂠</span>
+                <span>No cards played yet. First turn starts the pile!</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom: Emotes Bar + Action Buttons Bar -->
+          <div class="table-bottom-bar">
+            <!-- Emote reaction trigger -->
+            <div class="table-emotes-bar" id="table-emotes-bar">
+              <button class="emote-btn" data-emote="🤨" title="Suspicious!">🤨</button>
+              <button class="emote-btn" data-emote="🤫" title="Trust me...">🤫</button>
+              <button class="emote-btn" data-emote="😱" title="No way!">😱</button>
+              <button class="emote-btn" data-emote="💀" title="Dead!">💀</button>
+              <button class="emote-btn" data-emote="😎" title="Poker face">😎</button>
+            </div>
+
+            <!-- Action Buttons Bar -->
+            <div class="action-buttons" id="action-buttons">
+              <button class="action-btn btn-pass-action" id="btn-pass" disabled title="Pass turn (Shortcut: P)">
+                <span class="action-btn-icon">🚫</span>
+                <span class="action-btn-main">PASS</span>
+                <span class="action-btn-label">Skip round <kbd class="kbd-hint">P</kbd></span>
+              </button>
+              <button class="action-btn btn-dare-action" id="btn-dare" disabled title="Challenge last player's claim (Shortcut: D)">
+                <span class="action-btn-icon">🔍</span>
+                <span class="action-btn-main">DARE</span>
+                <span class="action-btn-label" id="dare-btn-label">Reveal <kbd class="kbd-hint">D</kbd></span>
+              </button>
+              <button class="action-btn btn-play-action" id="btn-play" disabled title="Play selected cards in order (Shortcut: Space)">
+                <span class="action-btn-icon">🃏</span>
+                <span class="action-btn-main">PLAY</span>
+                <span class="action-btn-label" id="play-btn-label">Select cards <kbd class="kbd-hint">Space</kbd></span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Game Event Log Side Panel -->
+      <div class="game-log-panel" id="game-log-panel">
+        <div class="log-header">
+          <span>📜 TABLE FEED</span>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span class="log-badge" id="log-count-badge">Live</span>
+            <button class="log-close-btn" id="log-close-btn">&times;</button>
+          </div>
+        </div>
+        <div class="log-entries" id="log-entries">
+          <div class="log-empty-msg">Shuffling cards & setting up table...</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Player's Tactical Hand Section -->
+    <div class="my-hand-area">
+
+      <!-- Rank Selector (Visible only when leading first play of a round) -->
+      <div class="rank-selector hidden" id="rank-selector">
+        <div class="rank-selector-header">
+          <span class="rank-selector-title">🎯 Declare Rank to Lead</span>
+          <span class="rank-selector-sub">(Truth or Lie)</span>
+        </div>
+        <div class="rank-selector-buttons" id="rank-buttons-container">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Tactical Staging Tray (Selected cards in exact order) -->
+      <div class="staging-tray" id="staging-tray" style="display:none;">
+        <div class="staging-header">
+          <div class="staging-title-wrap">
+            <span class="staging-pulse-badge">SEQUENCE</span>
+            <span class="staging-title">PLAY ORDER</span>
+            <span class="staging-help-hint">(Revealed as Card #1, #2, #3 if dared)</span>
+          </div>
+          <div class="staging-actions">
+            <button class="staging-btn" id="reverse-order-btn" title="Reverse order">⇄ Reverse</button>
+            <button class="staging-btn staging-btn-danger" id="clear-selected-btn" title="Clear selection">✕ Clear</button>
+          </div>
+        </div>
+        <div class="staging-cards-row" id="staging-cards-row">
+          <!-- Staged cards populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Hand Info Bar & Sort Controls -->
+      <div class="hand-info-row">
+        <div class="hand-info-left">
+          <span class="hand-label">YOUR HAND</span>
+          <span class="hand-counter-badge" id="my-card-count">0</span>
+          <span class="hand-selected-info" id="selected-info" style="display:none;"></span>
+        </div>
+        <div class="hand-sort-controls">
+          <span class="sort-label">Sort:</span>
+          <button class="sort-btn active" id="sort-rank-btn" title="Sort hand by rank">Rank</button>
+          <button class="sort-btn" id="sort-suit-btn" title="Sort hand by suit">Suit</button>
+        </div>
+      </div>
+
+      <!-- Player Hand Cards -->
+      <div class="my-hand-cards" id="my-hand-cards">
+        <!-- Cards populated by JS with fanned overlap layout -->
+      </div>
+
+    </div>
+
+  </div><!-- .game-page -->
+
+  <!-- Dare Standoff Modal -->
+  <div class="modal-overlay" id="dare-modal">
+    <div class="modal-box dare-modal-box">
+      <div class="dare-modal-glow"></div>
+      <div class="dare-modal-title">🔍 DARE CHALLENGE!</div>
+      <div class="dare-modal-sub" id="dare-modal-sub">
+        Choose which card to reveal from <strong id="dare-target-name">Opponent</strong>'s play
+      </div>
+      <div class="dare-hint">Cards are in the exact order played:</div>
+      <div class="dare-cards-row" id="dare-cards-row"></div>
+      <div class="dare-result-banner" id="dare-result-banner" style="display:none;"></div>
+      <div class="dare-modal-actions">
+        <button class="btn btn-ghost" id="dare-cancel-btn">Cancel</button>
+        <button class="btn btn-danger" id="dare-confirm-btn" disabled>🎯 Reveal Card</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game End Modal -->
+  <div class="modal-overlay" id="end-modal">
+    <div class="modal-box end-modal-box">
+      <div class="end-trophy" id="end-trophy">🏆</div>
+      <div class="end-title" id="end-title">Game Over!</div>
+      <div class="end-message" id="end-message"></div>
+      <div class="end-stats" id="end-stats"></div>
+      <div class="end-buttons">
+        <button class="btn btn-ghost" id="end-home-btn">🚪 Exit to Home</button>
+        <button class="btn btn-primary" id="end-replay-btn">🔄 Play Again</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rules & Help Modal -->
+  <div class="modal-overlay" id="rules-modal">
+    <div class="modal-box rules-modal-box">
+      <div class="rules-modal-header">
+        <span class="rules-title">🃏 How to Play Liar's Cards</span>
+        <button class="modal-close-x" id="rules-close-btn">&times;</button>
+      </div>
+      <div class="rules-modal-content">
+        <div class="rule-block">
+          <div class="rule-badge">1</div>
+          <div class="rule-body">
+            <h4>Every Turn: Play, Dare, or Pass</h4>
+            <p>On your turn, you have three options:</p>
+            <ul>
+              <li><strong>Play:</strong> Put 1 or more cards face down, claiming they match the declared rank (e.g. "2 Kings"). Any card can be a bluff!</li>
+              <li><strong>Dare:</strong> Challenge the previous player's claim! You choose 1 of their played cards (e.g. Card #1 or Card #2) to flip face up.</li>
+              <li><strong>Pass:</strong> Skip this round. Once you pass, you sit out until the table pile resets.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="rule-block">
+          <div class="rule-badge">2</div>
+          <div class="rule-body">
+            <h4>Selected Card Order Strategy</h4>
+            <p>You can select <strong>any cards in any custom order</strong> (not restricted to sequential ranks). When you play multiple cards, opponents will choose Card #1, Card #2, etc. to reveal. Place your bluff or truth strategically in the sequence!</p>
+          </div>
+        </div>
+
+        <div class="rule-block">
+          <div class="rule-badge">3</div>
+          <div class="rule-body">
+            <h4>Dare Penalty & Rewards</h4>
+            <ul>
+              <li>If the revealed card is <strong>TRUTHFUL</strong>: The challenger was wrong and takes <strong>all discard cards</strong> into their hand!</li>
+              <li>If the revealed card is a <strong>LIE</strong>: The bluffer was caught and takes <strong>all discard cards</strong> into their hand!</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="rule-block">
+          <div class="rule-badge">4</div>
+          <div class="rule-body">
+            <h4>Locked Temp Pile & Winning</h4>
+            <p>If all players pass, all cards in the center pile get <strong>permanently locked</strong> into the Temp Pile and cannot be picked up. Empty your hand to win — the last player holding cards loses!</p>
+          </div>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:16px;">
+        <button class="btn btn-primary" id="rules-got-it-btn">Got It, Let's Play!</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast notifications -->
+  <div id="toast-container"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/game.js"></script>
+</body>
+</html>
