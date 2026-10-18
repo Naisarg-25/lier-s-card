@@ -900,6 +900,7 @@ function renderMyHand(state) {
   const isMyTurn  = state.currentPlayerId === myId;
   const isEnded   = state.phase === 'ended';
 
+  const prevScrollLeft = container.scrollLeft;
   container.innerHTML = '';
 
   // Clean up any stale selected card IDs
@@ -916,14 +917,39 @@ function renderMyHand(state) {
     return ri !== 0 ? ri : a.suit.localeCompare(b.suit);
   });
 
-  // Calculate dynamic overlap based on total card count
-  // When holding 26 cards, overlap more closely (-30px) so they fan beautifully
-  const overlapMargin = sorted.length > 20 ? '-30px' : sorted.length > 12 ? '-24px' : '-16px';
+  // Detect mobile / compact viewport
+  const isCompact = window.innerWidth <= 768 || (window.innerHeight <= 650 && window.matchMedia('(orientation: landscape)').matches);
 
-  sorted.forEach(card => {
+  // Dynamic overlap: ensure every card exposes its top-left rank & suit index clearly
+  // (at least 22-24px exposed on compact, 34-38px on desktop)
+  let overlapMargin;
+  if (isCompact) {
+    if (sorted.length <= 6) {
+      overlapMargin = '-8px';
+    } else if (sorted.length <= 12) {
+      overlapMargin = '-14px';
+    } else if (sorted.length <= 18) {
+      overlapMargin = '-18px';
+    } else {
+      overlapMargin = '-20px';
+    }
+  } else {
+    if (sorted.length <= 6) {
+      overlapMargin = '-10px';
+    } else if (sorted.length <= 12) {
+      overlapMargin = '-18px';
+    } else if (sorted.length <= 20) {
+      overlapMargin = '-24px';
+    } else {
+      overlapMargin = '-28px';
+    }
+  }
+
+  sorted.forEach((card, index) => {
     const isSelected = selectedCards.includes(card.id);
     const orderIndex = isSelected ? selectedCards.indexOf(card.id) : null;
     const isDisabled = !isMyTurn || isEnded;
+    const isLast = (index === sorted.length - 1);
 
     const el = buildPlayingCard(card, {
       selectable: true,
@@ -931,9 +957,14 @@ function renderMyHand(state) {
       orderIndex,
       disabled: isDisabled
     });
-    el.style.marginRight = overlapMargin;
+
+    // Never apply negative margin to the last card, giving it breathing room
+    el.style.marginRight = isLast ? '16px' : overlapMargin;
     container.appendChild(el);
   });
+
+  // Preserve scroll position so selecting cards doesn't jump back to the start
+  container.scrollLeft = prevScrollLeft;
 
   updateSelectedInfo();
 }
@@ -1377,3 +1408,22 @@ setInterval(() => {
     }
   }
 }, 1000);
+
+/* ─── Hand Scroll & Viewport Responsiveness ────────────────────────────────── */
+const handCardsContainer = document.getElementById('my-hand-cards');
+if (handCardsContainer) {
+  // Allow smooth horizontal scrolling using mouse wheel
+  handCardsContainer.addEventListener('wheel', (e) => {
+    if (e.deltaY !== 0 && handCardsContainer.scrollWidth > handCardsContainer.clientWidth) {
+      e.preventDefault();
+      handCardsContainer.scrollLeft += e.deltaY;
+    }
+  }, { passive: false });
+}
+
+// Re-adjust card overlap on window resize or orientation flip
+window.addEventListener('resize', () => {
+  if (gameState) {
+    renderMyHand(gameState);
+  }
+});

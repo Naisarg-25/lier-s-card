@@ -1233,13 +1233,14 @@ html, body {
 .my-hand-cards {
   display: flex;
   align-items: flex-end;
-  padding: 14px 10px 4px;
+  padding: 16px 12px 6px;
   overflow-x: auto;
-  overflow-y: visible;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
-  height: 106px;
-  min-height: 106px;
-  max-height: 106px;
+  height: 114px;
+  min-height: 114px;
+  max-height: 114px;
   box-sizing: border-box;
 }
 
@@ -1260,7 +1261,7 @@ html, body {
   cursor: pointer;
   position: relative;
   margin-right: -24px;
-  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), margin 0.18s ease, z-index 0.18s;
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.18s ease;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.65);
   user-select: none;
   display: flex;
@@ -1271,21 +1272,21 @@ html, body {
 }
 
 .play-card:last-child {
-  margin-right: 8px;
+  margin-right: 16px !important;
 }
 
-.play-card:hover {
-  transform: translateY(-16px) scale(1.1);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.85);
-  z-index: 60 !important;
-  margin-right: 0;
-  margin-left: 6px;
+@media (hover: hover) and (pointer: fine) {
+  .play-card:hover {
+    transform: translateY(-14px) scale(1.06);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.85);
+    z-index: 60 !important;
+  }
 }
 
 .play-card.selected {
-  transform: translateY(-22px);
+  transform: translateY(-16px);
   border-color: var(--gold, #f59e0b);
-  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.9), 0 0 0 2px var(--gold, #f59e0b), 0 0 16px rgba(245, 158, 11, 0.5);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.9), 0 0 0 2px var(--gold, #f59e0b), 0 0 16px rgba(245, 158, 11, 0.5);
   z-index: 50 !important;
 }
 
@@ -1298,14 +1299,14 @@ html, body {
 
 .card-order-badge {
   position: absolute;
-  top: -8px;
-  right: -6px;
-  width: 20px;
-  height: 20px;
+  top: -7px;
+  left: 6px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   background: linear-gradient(135deg, #f59e0b, #d97706);
   color: #110500;
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   font-weight: 800;
   display: flex;
   align-items: center;
@@ -1324,13 +1325,35 @@ html, body {
 .card-corner {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
+  justify-content: flex-start;
   line-height: 1;
+  width: auto;
+  align-self: flex-start;
+  z-index: 2;
+  pointer-events: none;
 }
 
-.card-corner.bottom { transform: rotate(180deg); }
-.card-rank { font-size: 0.86rem; font-weight: 800; }
-.card-suit-sm { font-size: 0.7rem; }
+.card-corner.bottom {
+  align-self: flex-end;
+  align-items: flex-start;
+  transform: rotate(180deg);
+}
+
+.card-rank {
+  font-size: 0.86rem;
+  font-weight: 800;
+  text-align: left;
+  line-height: 1;
+  letter-spacing: -0.5px;
+}
+
+.card-suit-sm {
+  font-size: 0.72rem;
+  text-align: left;
+  line-height: 1;
+  margin-top: 1px;
+}
 
 .card-suit-center {
   position: absolute;
@@ -1625,16 +1648,21 @@ html, body {
   .kbd-hint { display: none; }
 
   .my-hand-cards {
-    height: 98px;
-    min-height: 98px;
+    height: 100px;
+    min-height: 100px;
+    padding: 12px 10px 4px;
   }
   .play-card {
-    width: 58px;
-    height: 84px;
-    margin-right: -22px;
+    width: 54px;
+    height: 80px;
+    padding: 3px 4px;
   }
-  .card-rank { font-size: 0.78rem; }
-  .card-suit-center { font-size: 1.5rem; }
+  .play-card.selected {
+    transform: translateY(-12px);
+  }
+  .card-rank { font-size: 0.76rem; }
+  .card-suit-sm { font-size: 0.62rem; }
+  .card-suit-center { font-size: 1.3rem; }
 }
 
 @media (max-width: 768px) and (orientation: portrait) {
@@ -1780,23 +1808,27 @@ html, body {
   .hand-label, .hand-counter-badge, .hand-selected-info,
   .sort-label, .sort-btn { font-size: 0.58rem; }
   .my-hand-cards {
-    height: clamp(62px, 19dvh, 78px);
-    min-height: clamp(62px, 19dvh, 78px);
-    max-height: clamp(62px, 19dvh, 78px);
-    padding: 4px 6px 2px;
+    height: clamp(66px, 20dvh, 84px);
+    min-height: clamp(66px, 20dvh, 84px);
+    max-height: clamp(66px, 20dvh, 84px);
+    padding: 8px 8px 2px;
   }
 
   .play-card {
-    width: 48px;
-    height: clamp(54px, 16dvh, 66px);
-    margin-right: -17px;
+    width: 46px;
+    height: clamp(52px, 16dvh, 66px);
     border-radius: 6px;
-    padding: 3px;
+    padding: 2px 3px;
   }
 
-  .card-rank { font-size: 0.66rem; }
+  .play-card.selected {
+    transform: translateY(-8px);
+  }
+
+  .card-rank { font-size: 0.68rem; }
   .card-suit-sm { font-size: 0.56rem; }
-  .card-suit-center { font-size: 1.2rem; }
+  .card-suit-center { font-size: 1.1rem; }
+  .card-corner.bottom { display: none; }
 }
 
 @media (max-width: 768px), (max-height: 500px) and (orientation: landscape) {
@@ -1874,13 +1906,17 @@ html, body {
   .opp-card-chip { font-size: 0.64rem; padding: 1px 4px; }
 
   .my-hand-cards {
-    height: 90px;
-    min-height: 90px;
+    height: 94px;
+    min-height: 94px;
+    padding: 10px 8px 4px;
   }
   .play-card {
-    width: 52px;
-    height: 76px;
-    margin-right: -20px;
+    width: 50px;
+    height: 74px;
+    padding: 3px 4px;
+  }
+  .play-card.selected {
+    transform: translateY(-10px);
   }
 }
 
@@ -2064,24 +2100,28 @@ html, body {
   }
 
   .my-hand-cards {
-    height: clamp(48px, 15dvh, 68px);
-    min-height: 48px;
-    max-height: 68px;
-    padding: 2px 4px 1px;
-    flex: 1 1 48px;
+    height: clamp(58px, 18dvh, 76px);
+    min-height: 56px;
+    max-height: 78px;
+    padding: 8px 6px 2px;
+    flex: 1 1 auto;
   }
 
   .play-card {
-    width: 40px;
-    height: clamp(44px, 13dvh, 60px);
-    margin-right: -15px;
-    padding: 2px;
-    border-radius: 5px;
+    width: 44px;
+    height: clamp(48px, 14dvh, 62px);
+    padding: 2px 3px;
+    border-radius: 6px;
   }
 
-  .card-rank { font-size: 0.58rem; }
-  .card-suit-sm { font-size: 0.5rem; }
+  .play-card.selected {
+    transform: translateY(-7px);
+  }
+
+  .card-rank { font-size: 0.64rem; }
+  .card-suit-sm { font-size: 0.54rem; }
   .card-suit-center { font-size: 1rem; }
+  .card-corner.bottom { display: none; }
 }
 
 @media (orientation: landscape) and (max-height: 360px) {
