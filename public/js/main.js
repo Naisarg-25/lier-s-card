@@ -50,12 +50,12 @@ const socket = io({
   transports: ['websocket', 'polling']
 });
 
-// Periodic heartbeat to prevent disconnect
+// Periodic heartbeat with identity to maintain active connection and self-heal session
 setInterval(() => {
   if (socket && socket.connected) {
-    socket.volatile.emit('clientHeartbeat');
+    socket.volatile.emit('clientHeartbeat', { playerId: myPlayerId });
   }
-}, 8000);
+}, 5000);
 let myName = ls.get('playerName') || '';
 let cancellingMatchmaking = false;
 

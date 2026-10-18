@@ -961,10 +961,38 @@ io.on('connection', socket => {
     handleTurnProgress(room);
   });
 
-  // Client heartbeat to maintain connection
-  socket.on('clientHeartbeat', () => {
-    const session = socketSessionMap.get(socket.id);
-    if (session) session.lastSeen = Date.now();
+  // Client heartbeat to maintain connection and self-heal session
+  socket.on('clientHeartbeat', ({ playerId, roomCode } = {}) => {
+    let session = socketSessionMap.get(socket.id);
+    if (session) {
+      session.lastSeen = Date.now();
+    } else if (playerId && roomCode) {
+      session = { playerId, roomCode: roomCode.toUpperCase().trim(), lastSeen: Date.now() };
+      socketSessionMap.set(socket.id, session);
+      socket.join(session.roomCode);
+    }
+
+    if (playerId && roomCode) {
+      const code = roomCode.toUpperCase().trim();
+      const room = rooms.get(code);
+      if (room) {
+        const player = room.players.find(p => p.id === playerId);
+        if (player) {
+          player.socketId = socket.id;
+          player.connected = true;
+          player.disconnectDeadline = null;
+          if (player.disconnectTimer) {
+            clearTimeout(player.disconnectTimer);
+            player.disconnectTimer = null;
+          }
+          const gamePlayer = room.game?.players.find(p => p.id === playerId);
+          if (gamePlayer) {
+            gamePlayer.connected = true;
+            gamePlayer.disconnectDeadline = null;
+          }
+        }
+      }
+    }
   });
 
   // Emote reaction
@@ -992,31 +1020,38 @@ io.on('connection', socket => {
     if (!room) return;
 
     const player = room.players.find(p => p.id === playerId);
-    if (player) {
-      player.connected = false;
-      player.socketId = null;
-      const deadline = Date.now() + DISCONNECT_GRACE_MS;
-      player.disconnectDeadline = deadline;
+    if (!player) return;
 
-      const gamePlayer = room.game?.players.find(p => p.id === playerId);
-      if (gamePlayer) {
-        gamePlayer.connected = false;
-        gamePlayer.disconnectDeadline = deadline;
-      }
-
-      if (room.status === 'waiting') {
-        io.to(roomCode).emit('roomUpdate', sanitize(room));
-      } else if (room.game && room.game.phase !== 'ended') {
-        room.game.addLog(`⚠️ ${player.name} disconnected (reconnect window: 60s)`);
-        broadcastStates(room);
-        handleTurnProgress(room);
-      }
-
-      if (player.disconnectTimer) clearTimeout(player.disconnectTimer);
-      player.disconnectTimer = setTimeout(() => {
-        handlePlayerDisconnectTimeout(roomCode, playerId);
-      }, DISCONNECT_GRACE_MS);
+    // CRITICAL: If the player has already connected on a new socket (e.g. page navigation from lobby to game),
+    // this disconnected socket is STALE and must NOT mark the active player as disconnected!
+    if (player.socketId && player.socketId !== socket.id) {
+      console.log(`[i] Ignoring stale socket ${socket.id} disconnect for ${player.name} (active socket: ${player.socketId})`);
+      return;
     }
+
+    player.connected = false;
+    player.socketId = null;
+    const deadline = Date.now() + DISCONNECT_GRACE_MS;
+    player.disconnectDeadline = deadline;
+
+    const gamePlayer = room.game?.players.find(p => p.id === playerId);
+    if (gamePlayer) {
+      gamePlayer.connected = false;
+      gamePlayer.disconnectDeadline = deadline;
+    }
+
+    if (room.status === 'waiting') {
+      io.to(roomCode).emit('roomUpdate', sanitize(room));
+    } else if (room.game && room.game.phase !== 'ended') {
+      room.game.addLog(`⚠️ ${player.name} disconnected (reconnect window: 60s)`);
+      broadcastStates(room);
+      handleTurnProgress(room);
+    }
+
+    if (player.disconnectTimer) clearTimeout(player.disconnectTimer);
+    player.disconnectTimer = setTimeout(() => {
+      handlePlayerDisconnectTimeout(roomCode, playerId);
+    }, DISCONNECT_GRACE_MS);
   });
 });
 

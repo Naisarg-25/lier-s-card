@@ -249,12 +249,12 @@ const socket = io({
   transports: ['websocket', 'polling']
 });
 
-// Periodic heartbeat to prevent mobile and cloud idle connection drop
+// Periodic heartbeat with identity to maintain active connection and self-heal session
 setInterval(() => {
   if (socket && socket.connected) {
-    socket.volatile.emit('clientHeartbeat');
+    socket.volatile.emit('clientHeartbeat', { playerId: myId, roomCode });
   }
-}, 8000);
+}, 5000);
 
 let reconnectBannerEl = null;
 
