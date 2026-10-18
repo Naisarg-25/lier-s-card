@@ -248,6 +248,8 @@ const socket = io({
   timeout: 20000,
   transports: ['websocket', 'polling']
 });
+let hasConnectedBefore = false;
+let hadConnectionIssue = false;
 
 // Periodic heartbeat with identity to maintain active connection and self-heal session
 setInterval(() => {
@@ -281,25 +283,31 @@ function updateConnectionBanner(isDisconnected, msg = '') {
 
 socket.on('disconnect', (reason) => {
   console.warn('[Socket] Disconnected:', reason);
-  updateConnectionBanner(true, 'Connection lost. Reconnecting to table...');
+  hadConnectionIssue = true;
+  updateConnectionBanner(true, `Connection lost (${reason}). Reconnecting to table...`);
 });
 
 socket.on('connect_error', (err) => {
   console.warn('[Socket] Connection error:', err);
-  updateConnectionBanner(true, 'Reconnecting to game server...');
+  hadConnectionIssue = true;
+  updateConnectionBanner(true, `Cannot reach the game server (${err.message}). Retrying...`);
 });
 
 socket.on('connect', () => {
-  updateConnectionBanner(false);
+  const isReconnect = hasConnectedBefore || hadConnectionIssue;
+  hasConnectedBefore = true;
   socket.emit('joinRoom', { roomCode, playerName: myName, playerId: myId }, (res) => {
     if (!res.ok) {
       showToast(res.err || 'Connecting to table...', 'info');
+      updateConnectionBanner(true, res.err || 'Could not rejoin the table.');
       if (res.err && (res.err.includes('removed') || res.err.includes('not found'))) {
         alert(res.err);
         location.href = '/';
       }
     } else {
-      showToast('Connected to game table', 'success', 2000);
+      if (isReconnect) updateConnectionBanner(false);
+      hadConnectionIssue = false;
+      showToast(isReconnect ? 'Reconnected to game table' : 'Connected to game table', 'success', 2000);
     }
   });
 
@@ -323,6 +331,26 @@ socket.on('dareResult', (result) => {
   handleDareResult(result);
 });
 
+socket.on('gameRestarted', () => {
+  if (endModalTimer !== null) {
+    clearTimeout(endModalTimer);
+    endModalTimer = null;
+  }
+  closeModal('end-modal');
+  closeModal('dare-modal');
+  selectedCards = [];
+  selectedRank = null;
+  dareCardIdx = null;
+  dareResolved = false;
+  prevTurnPlayerId = null;
+  document.querySelectorAll('.rank-btn').forEach(button => button.classList.remove('selected'));
+  const replayButton = document.getElementById('end-replay-btn');
+  if (replayButton) {
+    replayButton.disabled = false;
+    replayButton.textContent = '🔄 Play Again';
+  }
+});
+
 socket.on('playerEmote', ({ playerId, playerName, emote }) => {
   showPlayerEmote(playerId, emote);
   sounds.playEmote();
@@ -339,8 +367,7 @@ function exitGame() {
 
   const exitButtons = [
     document.getElementById('nav-exit-btn'),
-    document.getElementById('end-home-btn'),
-    document.getElementById('end-replay-btn')
+    document.getElementById('end-home-btn')
   ].filter(Boolean);
   exitButtons.forEach(button => { button.disabled = true; });
 
@@ -359,7 +386,19 @@ function exitGame() {
 
 document.getElementById('nav-exit-btn')?.addEventListener('click', exitGame);
 document.getElementById('end-home-btn')?.addEventListener('click', exitGame);
-document.getElementById('end-replay-btn')?.addEventListener('click', exitGame);
+document.getElementById('end-replay-btn')?.addEventListener('click', () => {
+  const button = document.getElementById('end-replay-btn');
+  if (!button) return;
+  button.disabled = true;
+  button.textContent = 'Starting new game...';
+  socket.timeout(5000).emit('playAgain', { roomCode }, (err, res) => {
+    if (err || !res?.ok) {
+      showToast(res?.err || 'Could not start another game. Please try again.', 'error');
+      button.disabled = false;
+      button.textContent = '🔄 Play Again';
+    }
+  });
+});
 
 function enterFullscreenLandscape() {
   const fullscreen = document.documentElement.requestFullscreen;
@@ -1058,6 +1097,24 @@ function submitPlayCards() {
 document.getElementById('btn-play')?.addEventListener('click', submitPlayCards);
 
 /* ─── Dare Challenge Handler ────────────────────────────────────────────────── */
+function renderDareCardSlots(count, selectable) {
+  const cardRow = document.getElementById('dare-cards-row');
+  if (!cardRow) return;
+
+  cardRow.innerHTML = '';
+  for (let i = 0; i < count; i++) {
+    const card = document.createElement('div');
+    card.className = 'dare-card';
+    card.dataset.index = i;
+    card.innerHTML = `
+      <div class="dare-card-slot-label">CARD #${i + 1}</div>
+      <div class="dare-card-symbol">🂠</div>
+    `;
+    if (selectable) card.addEventListener('click', () => selectDareCard(i));
+    cardRow.appendChild(card);
+  }
+}
+
 function openDareModal() {
   if (!gameState) return;
   const last = gameState.discardPile[gameState.discardPile.length - 1];
@@ -1068,7 +1125,6 @@ function openDareModal() {
 
   const subEl      = document.getElementById('dare-modal-sub');
   const nameEl     = document.getElementById('dare-target-name');
-  const cardRow    = document.getElementById('dare-cards-row');
   const banner     = document.getElementById('dare-result-banner');
   const confirmBtn = document.getElementById('dare-confirm-btn');
 
@@ -1082,21 +1138,7 @@ function openDareModal() {
 
   sounds.playDare();
 
-  // Render face-down cards corresponding to each played card in exact order
-  if (cardRow) {
-    cardRow.innerHTML = '';
-    for (let i = 0; i < last.count; i++) {
-      const card = document.createElement('div');
-      card.className = 'dare-card';
-      card.dataset.index = i;
-      card.innerHTML = `
-        <div class="dare-card-slot-label">CARD #${i + 1}</div>
-        <div class="dare-card-symbol">🂠</div>
-      `;
-      card.addEventListener('click', () => selectDareCard(i));
-      cardRow.appendChild(card);
-    }
-  }
+  renderDareCardSlots(last.count, true);
 
   openModal('dare-modal');
 }
@@ -1142,12 +1184,24 @@ function handleDareResult(result) {
   const banner     = document.getElementById('dare-result-banner');
   const cardRow    = document.getElementById('dare-cards-row');
   const confirmBtn = document.getElementById('dare-confirm-btn');
+  const revealedIndex = Number.isInteger(result.cardIndex) ? result.cardIndex : dareCardIdx;
+
+  if (!document.getElementById('dare-modal')?.classList.contains('open')) {
+    const count = Math.max(result.cardCount || gameState?.lastPlayedCount || 0, revealedIndex + 1);
+    const nameEl = document.getElementById('dare-target-name');
+    const subEl = document.getElementById('dare-modal-sub');
+    if (nameEl) nameEl.textContent = result.lastPlayerName;
+    if (subEl) subEl.textContent = `Revealed from ${result.lastPlayerName}'s play:`;
+    renderDareCardSlots(count, false);
+    openModal('dare-modal');
+  }
+  dareCardIdx = revealedIndex;
 
   // Flip revealed card
   if (cardRow) {
     const cards = cardRow.querySelectorAll('.dare-card');
     cards.forEach((c) => {
-      if (parseInt(c.dataset.index) === dareCardIdx) {
+      if (parseInt(c.dataset.index) === revealedIndex) {
         c.classList.add('revealed');
         const card  = result.chosenCard;
         const color = RED_SUITS.has(card.suit) ? '#dc2626' : '#111827';

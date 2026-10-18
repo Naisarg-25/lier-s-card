@@ -316,6 +316,8 @@ class LiarsGame {
     const result = {
       ok: true,
       chosenCard: chosen,
+      cardIndex,
+      cardCount: last.cards.length,
       isCorrect,
       darerId,
       darerName: darer.name,
@@ -477,6 +479,7 @@ function aiMove(game, botId) {
 
 function broadcastStates(room) {
   if (!room.game) return;
+  if (room.game.phase === 'ended') room.status = 'ended';
   room.players.forEach(p => {
     if (!p.isAI) {
       const s = io.sockets.sockets.get(p.socketId);
@@ -500,7 +503,7 @@ function runAI(room) {
 
   setTimeout(() => {
     g.aiTimerActive = false;
-    if (!room.game || room.game.phase === 'ended') return;
+    if (room.game !== g || room.game.phase === 'ended') return;
     if (room.game.currentPlayer?.id !== cur.id) return;
 
     const move = aiMove(g, cur.id);
@@ -510,6 +513,7 @@ function runAI(room) {
       if (r.ok) {
         broadcastDare(room, r);
         setTimeout(() => {
+          if (room.game !== g) return;
           broadcastStates(room);
           handleTurnProgress(room);
         }, 2200);
@@ -696,6 +700,7 @@ io.on('connection', socket => {
     const existing = room.players.find(p => p.id === pId);
 
     if (existing) {
+      const wasConnected = existing.connected !== false;
       // Reclaiming slot (e.g. navigated from index to lobby or game, or page refreshed)
       if (existing.disconnectTimer) {
         clearTimeout(existing.disconnectTimer);
@@ -719,7 +724,7 @@ io.on('connection', socket => {
       io.to(code).emit('roomUpdate', sanitize(room));
 
       if (room.game) {
-        room.game.addLog(`🎉 ${existing.name} reconnected!`);
+        if (!wasConnected) room.game.addLog(`🎉 ${existing.name} reconnected!`);
         broadcastStates(room);
         handleTurnProgress(room);
       }
@@ -924,6 +929,32 @@ io.on('connection', socket => {
     cb({ ok: true });
   });
 
+  socket.on('playAgain', ({ roomCode }, cb) => {
+    const session = socketSessionMap.get(socket.id);
+    const code = (roomCode || '').toUpperCase().trim();
+    const room = rooms.get(code);
+    if (!room) return cb({ ok: false, err: 'Room not found' });
+    if (!session || session.roomCode !== code || !room.players.some(p => p.id === session.playerId)) {
+      return cb({ ok: false, err: 'You are not a player in this room' });
+    }
+    if (!room.game || room.game.phase !== 'ended') {
+      return cb({ ok: false, err: 'The current game has not ended yet' });
+    }
+
+    if (room.turnTimer) {
+      clearTimeout(room.turnTimer);
+      room.turnTimer = null;
+    }
+    const game = new LiarsGame(room.players, room.mode);
+    deal(game);
+    room.game = game;
+    room.status = 'playing';
+    io.to(code).emit('gameRestarted');
+    broadcastStates(room);
+    handleTurnProgress(room);
+    cb({ ok: true });
+  });
+
   // Play cards
   socket.on('playCards', ({ roomCode, cardIds, declaredRank }, cb) => {
     const session = socketSessionMap.get(socket.id);
@@ -946,7 +977,12 @@ io.on('connection', socket => {
     if (!r.ok) return cb(r);
     broadcastDare(room, r);
     cb({ ok: true, result: r });
-    setTimeout(() => { broadcastStates(room); handleTurnProgress(room); }, 2500);
+    const game = room.game;
+    setTimeout(() => {
+      if (room.game !== game) return;
+      broadcastStates(room);
+      handleTurnProgress(room);
+    }, 2500);
   });
 
   // Pass

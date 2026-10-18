@@ -345,12 +345,15 @@ html, body {
   left: 50%;
   transform: translateX(-50%) translateY(-24px);
   padding: 8px 20px;
+  max-width: calc(100vw - 24px);
   border-radius: 999px;
   font-size: 0.82rem;
   font-weight: 700;
   display: flex;
   align-items: center;
   gap: 8px;
+  text-align: center;
+  overflow-wrap: anywhere;
   z-index: 99999;
   backdrop-filter: blur(14px);
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
