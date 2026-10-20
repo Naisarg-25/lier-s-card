@@ -12,6 +12,10 @@ const io = new Server(server, {
   connectTimeout: 20000
 });
 
+app.get('/health', (_req, res) => {
+  res.json({ status: 'ok' });
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('/', (_, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
