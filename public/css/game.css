@@ -1580,13 +1580,35 @@ html, body {
 .rule-body ul { padding-left: 16px; font-size: 0.76rem; color: #A4907C; line-height: 1.48; }
 
 /* End Modal */
-.end-modal-box { text-align: center; max-width: 440px; }
+.end-modal-box { text-align: center; max-width: 800px; max-height: calc(100vh - 24px); overflow-y: auto; }
+.end-ad-slot { padding: 0; }
 .end-trophy   { font-size: 4.5rem; margin-bottom: 10px; display: block; }
 .end-title    { font-size: 1.8rem; font-weight: 800; margin-bottom: 6px; font-family: 'Playfair Display', serif; }
 .end-title.win  { color: #c9a96e; }
 .end-title.lose { color: #c0504a; }
 .end-message  { color: #F1DEC9; margin-bottom: 20px; font-size: 0.95rem; }
 .end-buttons  { display: flex; gap: 10px; justify-content: center; }
+
+@media (max-width: 767px) {
+  #end-modal { padding: 0; }
+  .end-modal-box {
+    width: 100vw;
+    max-width: 100vw;
+    padding: 8px 0;
+  }
+
+  .end-ad-slot {
+    width: 318px;
+    max-width: none;
+    padding: 8px;
+  }
+
+  .end-ad-slot .ad-unit {
+    width: 300px;
+    max-width: none;
+    height: 250px;
+  }
+}
 
 /* ─── Responsive Media Queries ──────────────────────────────────────────────── */
 @media (max-width: 1024px) {

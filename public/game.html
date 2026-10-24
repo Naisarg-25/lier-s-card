@@ -5,6 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Game — Liar's Cards</title>
   <meta name="description" content="Play Liar's Cards in real-time. Bluff, dare, and outlast your opponents." />
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="canonical" href="https://liarscard.site/" />
+  <meta property="og:title" content="Liar's Cards - Play the Bluffing Card Game Online" />
+  <meta property="og:description" content="Bluff, challenge, and outsmart your opponents in Liar's Cards. Play the multiplayer card game with friends online." />
+  <meta property="og:url" content="https://liarscard.site/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="https://liarscard.site/images/icon.png" />
+  <meta name="theme-color" content="#1a130e">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32.png">
   <link rel="apple-touch-icon" sizes="512x512" href="/images/icon.png">
@@ -247,6 +255,9 @@
   <!-- Game End Modal -->
   <div class="modal-overlay" id="end-modal">
     <div class="modal-box end-modal-box">
+      <div class="uno-ad-slot end-ad-slot" id="end-ad-slot" data-ad-size="winner" role="complementary" aria-label="Sponsored advertisement">
+        <span class="ad-label">Sponsored</span>
+      </div>
       <div class="end-trophy" id="end-trophy">🏆</div>
       <div class="end-title" id="end-title">Game Over!</div>
       <div class="end-message" id="end-message"></div>
@@ -315,6 +326,7 @@
   <!-- Toast notifications -->
   <div id="toast-container"></div>
 
+  <script src="/js/ads.js"></script>
   <script src="/js/keep-alive.js"></script>
   <script src="/socket.io/socket.io.js"></script>
   <script src="/js/game.js"></script>

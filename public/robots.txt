@@ -1,4 +1,9 @@
 User-agent: *
 Allow: /
+Disallow: /lobby
+Disallow: /lobby.html
+Disallow: /game
+Disallow: /game.html
+Disallow: /socket.io/
 
 Sitemap: https://liarscard.site/sitemap.xml

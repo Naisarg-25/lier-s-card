@@ -1080,6 +1080,9 @@ function showEndModal(state) {
     }
   }
 
+  const endAd = document.getElementById('end-ad-slot');
+  if (endAd) window.loadResponsiveAd?.(endAd);
+
   openModal('end-modal');
 }
 

@@ -5,6 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lobby — Liar's Cards</title>
   <meta name="description" content="Room lobby for Liar's Cards. Wait for friends to join, then start the game." />
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="canonical" href="https://liarscard.site/" />
+  <meta property="og:title" content="Liar's Cards - Play the Bluffing Card Game Online" />
+  <meta property="og:description" content="Bluff, challenge, and outsmart your opponents in Liar's Cards. Play the multiplayer card game with friends online." />
+  <meta property="og:url" content="https://liarscard.site/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="https://liarscard.site/images/icon.png" />
+  <meta name="theme-color" content="#1a130e">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32.png">
   <link rel="apple-touch-icon" sizes="512x512" href="/images/icon.png">
@@ -17,6 +25,9 @@
   <div class="lobby-page">
 
     <!-- Header -->
+    <div class="uno-ad-slot" id="lobby-ad-slot" data-ad-auto role="complementary" aria-label="Sponsored advertisement">
+        <span class="ad-label">Sponsored</span>
+    </div>
     <div class="lobby-header fade-in">
       <a href="/" style="text-decoration:none;">
         <span class="cinzel text-gold" style="font-size:1.5rem;"><img src="/images/icon.png" alt="" width="28" height="28" style="vertical-align:middle;margin-right:4px;"> LIAR'S CARDS</span>
@@ -79,6 +90,7 @@
   <!-- Toast -->
   <div id="toast-container"></div>
 
+  <script src="/js/ads.js"></script>
   <script src="/js/keep-alive.js"></script>
   <script src="/socket.io/socket.io.js"></script>
   <script src="/js/lobby.js"></script>

@@ -105,6 +105,44 @@ body {
 /* backward-compat alias */
 .cinzel { font-family: 'Playfair Display', serif; }
 
+/* ─── Responsive ad slots ──────────────────────────────────────────────────── */
+.uno-ad-slot {
+  position: relative;
+  z-index: 1;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 8px;
+  overflow: hidden;
+  border: 1px solid var(--gold-d);
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(46,34,25,.96), rgba(26,19,14,.98));
+  box-shadow: 0 0 18px rgba(201,169,110,.12), inset 0 1px 0 rgba(241,222,201,.06);
+  text-align: center;
+}
+.ad-label {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--text-xdim);
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+.ad-unit {
+  display: flex;
+  max-width: 100%;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin: 0 auto;
+}
+.ad-unit-728 { width: 728px; height: 90px; }
+.ad-unit-320 { width: 320px; height: 50px; }
+.ad-unit-300 { width: 300px; height: 250px; }
+.ad-unit iframe { display: block; max-width: 100%; border: 0; }
+
 /* ─── Glass card ────────────────────────────────────────────────────────────── */
 .glass {
   background: var(--surface);
@@ -417,7 +455,8 @@ body {
 
 .slider-row { display: flex; align-items: center; gap: 16px; }
 .range-input {
-  flex: 1; -webkit-appearance: none;
+  flex: 1; 
+  -webkit-appearance: none;
   height: 5px; border-radius: 3px;
   background: linear-gradient(to right, var(--c2) var(--val, 20%), var(--border2) var(--val, 20%));
   outline: none; cursor: pointer;
