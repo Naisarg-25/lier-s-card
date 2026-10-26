@@ -645,8 +645,14 @@ function handlePlayerDisconnectTimeout(roomCode, playerId) {
 }
 
 // ─── Socket events ────────────────────────────────────────────────────────────
+function broadcastOnlineCount() {
+  const count = io.engine.clientsCount;
+  io.emit('onlineCount', { count });
+}
+
 io.on('connection', socket => {
   console.log('[+]', socket.id);
+  broadcastOnlineCount();
 
   // Create room
   socket.on('createRoom', ({ mode, playerName, playerId, botCount }, cb) => {
@@ -1051,6 +1057,7 @@ io.on('connection', socket => {
   // Disconnect with 60s grace period and auto-turn progress
   socket.on('disconnect', (reason) => {
     console.log(`[-] Socket ${socket.id} disconnected (${reason})`);
+    broadcastOnlineCount();
     const session = socketSessionMap.get(socket.id);
     if (!session) return;
     const { playerId, roomCode } = session;

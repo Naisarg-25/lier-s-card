@@ -37,6 +37,12 @@
   <div class="stars-bg"></div>
   <div class="nebula"></div>
 
+  <!-- Online player counter -->
+  <div class="online-counter" id="online-counter" aria-live="polite" aria-label="Online players">
+    <span class="online-dot"></span>
+    <span class="online-text"><span id="online-count">—</span> online</span>
+  </div>
+
   <!-- Floating background cards -->
   <div class="bg-cards">
     <div class="bg-card"></div><div class="bg-card"></div>
@@ -165,6 +171,15 @@
   <script src="/js/ads.js"></script>
   <script src="/js/keep-alive.js"></script>
   <script src="/socket.io/socket.io.js"></script>
+  <script>
+    (function () {
+      const _counterSocket = io({ autoConnect: true, reconnectionDelay: 3000 });
+      _counterSocket.on('onlineCount', function (data) {
+        const el = document.getElementById('online-count');
+        if (el) el.textContent = data.count;
+      });
+    })();
+  </script>
   <script src="/js/main.js"></script>
 </body>
 </html>

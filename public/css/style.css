@@ -607,3 +607,56 @@ body {
 @keyframes fade-in { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:none} }
 .fade-in        { animation: fade-in .45s ease both; }
 .fade-in-delay  { animation: fade-in .45s .18s ease both; }
+
+/* ─── Online Player Counter ──────────────────────────────────────────────────── */
+.online-counter {
+  position: fixed;
+  top: 16px;
+  right: 18px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 14px 6px 10px;
+  background: rgba(26, 19, 14, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(200, 182, 166, 0.18);
+  border-radius: 50px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.45), inset 0 1px 0 rgba(241,222,201,0.05);
+  animation: fade-in 0.6s 0.3s ease both;
+  user-select: none;
+  pointer-events: none;
+}
+
+.online-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green), 0 0 12px rgba(122,170,130,0.45);
+  animation: online-pulse 2.2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes online-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 5px var(--green), 0 0 10px rgba(122,170,130,0.4); }
+  50%       { opacity: 0.65; box-shadow: 0 0 3px var(--green), 0 0 6px rgba(122,170,130,0.2); }
+}
+
+.online-text {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--c3);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+#online-count {
+  color: var(--gold-l);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  transition: color 0.3s ease;
+}
+
