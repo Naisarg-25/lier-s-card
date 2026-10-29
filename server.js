@@ -12,6 +12,23 @@ const io = new Server(server, {
   connectTimeout: 20000
 });
 
+
+app.use((req, res, next) => {
+  const host = (req.headers.host || "")
+    .split(":")[0]
+    .toLowerCase();
+
+  if (host === "lier-s-card.onrender.com") {
+    return res.redirect(
+      301,
+      `https://liarscard.site${req.originalUrl}`
+    );
+  }
+
+  next();
+});
+
+
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
