@@ -1,5 +1,100 @@
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,700;0,900;1,700&display=swap');
 
+/* ─── SEO Content Section (Homepage) ────────────────────────────────────────── */
+.seo-content-section {
+  position: relative;
+  z-index: 1;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 48px 20px 64px;
+}
+.seo-content-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.seo-heading {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.4rem, 4vw, 2rem);
+  color: var(--gold-l);
+  margin-bottom: 4px;
+  margin-top: 8px;
+}
+.seo-para {
+  color: var(--text-dim);
+  font-size: 0.97rem;
+  line-height: 1.75;
+  max-width: 720px;
+}
+.seo-para strong { color: var(--c4); }
+.seo-features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+.seo-feature-card {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  padding: 20px 18px;
+}
+.seo-feature-icon {
+  font-size: 1.8rem;
+  display: block;
+  margin-bottom: 10px;
+}
+.seo-feature-card h3 {
+  font-size: 1rem;
+  color: var(--gold);
+  margin: 0 0 8px;
+}
+.seo-feature-card p {
+  color: var(--text-dim);
+  font-size: 0.88rem;
+  line-height: 1.6;
+  margin: 0 0 10px;
+}
+.seo-link {
+  color: var(--gold);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+.seo-link:hover { text-decoration: underline; }
+.seo-rules-list {
+  padding-left: 1.4em;
+  color: var(--text-dim);
+  font-size: 0.95rem;
+  line-height: 1.75;
+  max-width: 700px;
+}
+.seo-rules-list li { margin-bottom: 10px; }
+.seo-rules-list strong { color: var(--c4); }
+.seo-cta-text { margin-top: 4px; }
+.seo-links-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 8px;
+}
+.seo-pill-link {
+  display: inline-block;
+  padding: 9px 20px;
+  border: 1px solid var(--border2);
+  border-radius: 100px;
+  color: var(--c4);
+  text-decoration: none;
+  font-size: 0.88rem;
+  font-weight: 500;
+  transition: var(--transition);
+  background: var(--surface);
+}
+.seo-pill-link:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: rgba(201,169,110,.08);
+}
+
 /* ─── Design Tokens ─────────────────────────────────────────────────────────── */
 :root {
   /* Brand palette */

@@ -1,0 +1,21 @@
+{
+  "name": "Liar's Cards",
+  "short_name": "Liar's Cards",
+  "description": "Free online multiplayer bluffing card game. Bluff, dare, and outlast your opponents.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a130e",
+  "theme_color": "#1a130e",
+  "icons": [
+    {
+      "src": "/images/favicon-32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/images/icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

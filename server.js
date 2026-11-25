@@ -36,6 +36,15 @@ app.get('/health', (_req, res) => {
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('/', (_, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
+// ─── SEO Content Pages ────────────────────────────────────────────────────────
+app.get('/how-to-play', (_, res) => res.sendFile(path.join(__dirname, 'public', 'how-to-play.html')));
+app.get('/play-with-friends', (_, res) => res.sendFile(path.join(__dirname, 'public', 'play-with-friends.html')));
+app.get('/bluffing-strategy', (_, res) => res.sendFile(path.join(__dirname, 'public', 'bluffing-strategy.html')));
+
+// ─── Prevent direct navigation to session-gated pages ─────────────────────────
+// lobby.html and game.html are intentionally served by express.static above
+// but are excluded from robots.txt and sitemap intentionally.
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 const RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 const SUITS = ['♠','♥','♦','♣'];

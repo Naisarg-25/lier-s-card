@@ -1,5 +1,11 @@
 User-agent: *
 Allow: /
+Allow: /how-to-play
+Allow: /play-with-friends
+Allow: /bluffing-strategy
 Disallow: /socket.io/
+Disallow: /lobby.html
+Disallow: /game.html
+Disallow: /health
 
 Sitemap: https://liarscard.site/sitemap.xml
